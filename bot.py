@@ -9,15 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
-print(TOKEN)
 SERVER_ID = int(os.getenv("SERVER_ID"))
-print(SERVER_ID)
 TARGET_CHANNEL_ID = int(os.getenv("CHANNEL"))
-print(TARGET_CHANNEL_ID)
 MSG_NEEDED = int(os.getenv("MSG_NEEDED"))
-print(MSG_NEEDED)
 PRIZE = int(os.getenv("PRIZE"))
-print(PRIZE)
 # Embed Colors
 MAIN_COLOR = 0x5865F2
 SUCCESS_COLOR = 0x43FF33
@@ -60,20 +55,20 @@ class MyClient(commands.Bot):
 
     async def start_giveaway(self, channel):
         embed = discord.Embed(
-            title="🎉 Giveaway Started!",
-            description=f"React with 🎉 to join!\n\n**Prize → __{PRIZE:,}__ OWO**",
+            title="## <a:confeti:1437356994142142514> Giveaway Started! 🎉",
+            description=f"React with <a:confeti:1437356994142142514> to join!\n\n**Prize → __{PRIZE:,}__ OWO**",
             color=MAIN_COLOR
         )
         embed.set_footer(text=f"Picking winner in {GIVEAWAY_DURATION} seconds!")
         msg = await channel.send(embed=embed)
         self.last_giveaway_msg = msg  # store it for later
 
-        await msg.add_reaction("🎉")
+        await msg.add_reaction("<a:confeti:1437356994142142514>")
 
         await asyncio.sleep(GIVEAWAY_DURATION)
 
         msg = await channel.fetch_message(msg.id)
-        reaction = discord.utils.get(msg.reactions, emoji="🎉")
+        reaction = discord.utils.get(msg.reactions, emoji="<a:confeti:1437356994142142514>")
 
         if not reaction:
             return await channel.send("❌ No reactions. Giveaway canceled.")
@@ -84,10 +79,10 @@ class MyClient(commands.Bot):
             return await channel.send("❌ No valid users entered.")
 
         winner = random.choice(users)
-        
+
         result_embed = discord.Embed(
             title="🎊 Winner!",
-            description=f"{winner.name} won __**{PRIZE:,}**__ OWO 🎉🎉",
+            description=f"{winner.name} won __**{PRIZE:,}**__ OWO <a:confeti:1437356994142142514><a:confeti:1437356994142142514>",
             color=SUCCESS_COLOR
         )
 
