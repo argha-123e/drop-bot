@@ -1,3 +1,3 @@
 # drop
 
-paid work for taksh, owner og gypsy union
+drops owo gwy after a certain msgs gets complited

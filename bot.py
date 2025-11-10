@@ -78,7 +78,7 @@ CONFETI_EMOJI = discord.PartialEmoji(name='confeti', id=1437356994142142514, ani
 intents = discord.Intents.all()
 
 class MyClient(commands.Bot):
-    def __init__(self, SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix):
+    def __init__(self, SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL):
         super().__init__(command_prefix=".", intents=intents)
         self.msg_count = 0
         self.TARGET_CHANNEL_ID = TARGET_CHANNEL_ID
@@ -86,12 +86,17 @@ class MyClient(commands.Bot):
         self.PRIZE = PRIZE
         self.MSG_NEEDED = MSG_NEEDED
         self.prefix = prefix
+        self.PAY_CHANNEL = PAY_CHANNEL
 
     async def on_ready(self):
         await self.tree.sync()
         self.channel = self.get_channel(self.TARGET_CHANNEL_ID)
         if self.channel is None:
-            print("❌ Channel not found!")
+            print("❌ general Channel not found!")
+            return
+        self.paychannel = self.get_channel(self.PAY_CHANNEL)
+        if self.paychannel is None:
+            print("❌pay Channel not found!")
             return
         print(f"✅ Logged in as {self.user}")
     async def on_message(self, message):
@@ -139,12 +144,14 @@ class MyClient(commands.Bot):
 
         winner = random.choice(users)
 
+        await self.paychannel.send(f"{winner.name} won __**{self.PRIZE:,} OWO**__")
+
         result_embed = discord.Embed(
             title="🎊 Winner!",
             description=f"congratulations {winner.name} you have won __**{self.PRIZE:,}**__ OWO <a:confeti:1437356994142142514><a:confeti:1437356994142142514>",
             color=SUCCESS_COLOR
         )
-
+        
         if hasattr(self, "last_giveaway_msg") and self.last_giveaway_msg:
             try:
             # ✅ Confirm the message still exists on Discord
@@ -176,18 +183,19 @@ def get_data():
             TARGET_CHANNEL_ID = details.get("channel", "null")
             PRIZE = details.get("prize", 15000)
             MSG_NEEDED = details.get("msg_needed", 100)
-            servers.append((SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix))
+            PAY_CHANNEL = details.get("pay_channel", None)
+            servers.append((SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL))
             print(servers)
         return servers
 
-def start_bot(SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix):
-    client = MyClient(SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix)
+def start_bot(SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL):
+    client = MyClient(SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL)
     client.run(TOKEN)
 def start():
     servers = get_data()
     if not servers:
         print("❌ No valid token found.")
         return
-    tasks = [start_bot(s[0], s[1], s[2], s[3],s[4]) for s in servers]
+    task = [start_bot(s[0], s[1], s[2], s[3], s[4], s[5] ) for s in servers]
     
 start()
