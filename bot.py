@@ -55,7 +55,7 @@ class MyClient(commands.Bot):
 
     async def start_giveaway(self, channel):
         embed = discord.Embed(
-            title="## <a:confeti:1437356994142142514> Giveaway Started! 🎉",
+            title="<a:confeti:1437356994142142514> Giveaway Started! <a:confeti:1437356994142142514>",
             description=f"React with <a:confeti:1437356994142142514> to join!\n\n**Prize → __{PRIZE:,}__ OWO**",
             color=MAIN_COLOR
         )
