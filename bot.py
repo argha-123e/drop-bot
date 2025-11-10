@@ -21,6 +21,10 @@ ERROR_COLOR = 0xFF0000
 # Giveaway timer(seconds)
 GIVEAWAY_DURATION = 5
 
+# Emoji's
+CONFETI_EMOJI = discord.PartialEmoji(name='confeti', id=1437356994142142514, animated=True)
+
+
 intents = discord.Intents.all()
 
 class MyClient(commands.Bot):
@@ -68,7 +72,7 @@ class MyClient(commands.Bot):
         await asyncio.sleep(GIVEAWAY_DURATION)
 
         msg = await channel.fetch_message(msg.id)
-        reaction = discord.utils.get(msg.reactions, emoji="<a:confeti:1437356994142142514>")
+        reaction = discord.utils.get(msg.reactions, emoji=CONFETI_EMOJI)
 
         if not reaction:
             return await channel.send("❌ No reactions. Giveaway canceled.")
