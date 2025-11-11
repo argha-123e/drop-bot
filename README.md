@@ -9,6 +9,8 @@ this is for only one server, it wont support multiple servers
 
 1. store BOT TOKEN in a `.env` file with variable name "TOKEN"
 
-example, `TOKEN=MTQzNzMwODM1gigugheugh3MQ.GkZgrgrwI.oMi-GDBw_ifSkOrgrg5WBrgrgrgjSyInHVYGnZo`
+  example, `TOKEN=MTQzNzMwODM1gigugheugh3MQ.GkZgrgrwI.oMi-GDBw_ifSkOrgrg5WBrgrgrgjSyInHVYGnZo` (synthetic token)
 
 2. change other configs in `data.json`
+
+  example, view `data.json`
