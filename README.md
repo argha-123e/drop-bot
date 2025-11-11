@@ -14,3 +14,7 @@ this is for only one server, it wont support multiple servers
 2. change other configs in `data.json`
 
     example, view `data.json`
+
+3. install modules from `requirements.txt`
+
+    example, `pip install -r requirements.txt` or `pip3 install -r requirements.txt`
