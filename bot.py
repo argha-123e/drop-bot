@@ -5,6 +5,7 @@ import os
 import json
 import random
 import datetime
+import tempfile
 from dotenv import load_dotenv
 
 DATA_FILE = "data.json"
@@ -71,9 +72,8 @@ ERROR_COLOR = 0xFF0000
 # Giveaway timer(seconds)
 GIVEAWAY_DURATION = 5
 
-# Emoji's
-CONFETI_EMOJI = discord.PartialEmoji(name='confeti', id=1437356994142142514, animated=True)
-
+# Emoji's (bots own emojis to use)
+CONFETI_EMOJI = discord.PartialEmoji(name='confetti', id=1437356994142142514, animated=True) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
 
 intents = discord.Intents.all()
 
@@ -114,20 +114,22 @@ class MyClient(commands.Bot):
             if self.msg_count >= self.MSG_NEEDED:
                 self.msg_count = 0
                 await self.start_giveaway(self.channel)
+                
 
         await self.process_commands(message)
 
     async def start_giveaway(self, channel):
         embed = discord.Embed(
-            title="<a:confeti:1437356994142142514> Giveaway Started! <a:confeti:1437356994142142514>",
-            description=f"React with <a:confeti:1437356994142142514> to join!\n\n**Prize → __{self.PRIZE:,}__ OWO**",
+            title="<a:confetti:1437356994142142514> Giveaway Started! <a:confetti:1437356994142142514>",
+            description=f"React with <a:confetti:1437356994142142514> to join!\n\n**Prize → __{self.PRIZE:,}__ OWO**",
             color=MAIN_COLOR
         )
         embed.set_footer(text=f"Picking winner in {GIVEAWAY_DURATION} seconds!")
         msg = await channel.send(embed=embed)
         self.last_giveaway_msg = msg  # store it for later
 
-        await msg.add_reaction("<a:confeti:1437356994142142514>")
+        # add reaction to gwy msg so ppls can react on it to join
+        await msg.add_reaction("<a:confetti:1437356994142142514>")
 
         await asyncio.sleep(GIVEAWAY_DURATION)
 
@@ -148,7 +150,7 @@ class MyClient(commands.Bot):
 
         result_embed = discord.Embed(
             title="🎊 Winner!",
-            description=f"congratulations {winner.name} you have won __**{self.PRIZE:,}**__ OWO <a:confeti:1437356994142142514><a:confeti:1437356994142142514>",
+            description=f"congratulations {winner.name} you have won __**{self.PRIZE:,}**__ OWO <a:confetti:1437356994142142514><a:confetti:1437356994142142514>",
             color=SUCCESS_COLOR
         )
         
@@ -176,6 +178,7 @@ class MyClient(commands.Bot):
 
 def get_data():
         data = load_data()
+        temp = []
         servers = []
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         for SERVER_ID, details in data.items():
@@ -185,17 +188,15 @@ def get_data():
             MSG_NEEDED = details.get("msg_needed", 100)
             PAY_CHANNEL = details.get("pay_channel", None)
             servers.append((SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL))
-            print(servers)
+            servers = list(servers[0])
         return servers
 
-def start_bot(SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL):
-    client = MyClient(SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL)
-    client.run(TOKEN)
 def start():
     servers = get_data()
     if not servers:
         print("❌ No valid token found.")
         return
-    task = [start_bot(s[0], s[1], s[2], s[3], s[4], s[5] ) for s in servers]
-    
+    client = MyClient(servers[0], servers[1], servers[2], servers[3], servers[4], servers[5])
+    client.run(TOKEN)
+
 start()
