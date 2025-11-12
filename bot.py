@@ -61,6 +61,100 @@ def update_data(self, key, value):
     elif key == "last_timestamp":
         self.timestamp = value
 
+# data logging helpler func's
+import datetime
+
+DEV_ID = 123456789012345678  # <- replace with your actual dev Discord ID
+
+def _sanitize_prize(Prize):
+    """Convert prize (str or int) like '15,000' or 15000 to int."""
+    if isinstance(Prize, int):
+        return Prize
+    try:
+        return int(str(Prize).replace(",", "").strip())
+    except Exception:
+        return 0
+
+def ensure_server_schema(sid: str, data: dict):
+    """Ensure drops and backups keys exist for a server dict (mutates data)."""
+    server = data.setdefault(sid, {})
+    server.setdefault("drops", {"total_drops": 0, "total_owo": 0, "history": []})
+    server.setdefault("backups", {})  # map timestamp -> snapshot
+    return server
+
+def update_drop_data(server_id: int, Prize, winners_list):
+    print(Prize)
+    """
+    Record a finished giveaway.
+    - server_id: int or str
+    - prize: str or int
+    - winners_list: list of user IDs (or strings)
+    """
+    sid = str(server_id)
+    data = load_data()
+    if sid not in data:
+        # nothing configured for this server — don't create server config silently
+        print(f"[update_drop_data] server {sid} not found in data.json")
+        return False
+
+    server = ensure_server_schema(sid, data)
+    drops = server["drops"]
+
+    prize_val = _sanitize_prize(Prize)
+    print(589375975375757357)
+    print(prize_val)
+    # increment totals
+    drops["total_drops"] = drops.get("total_drops", 0) + 1
+    drops["total_owo"] = drops.get("total_owo", 0) + prize_val
+
+    # append history entry (store user IDs for later)
+    drops.setdefault("history", []).append({
+        "time": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "winners": [str(u) for u in winners_list],
+        "prize": prize_val
+    })
+
+    atomic_save(DATA_FILE, data)
+    return True
+
+def get_server_stats(sid: str):
+    """Return a dict of computed stats for server sid (string)."""
+    data = load_data()
+    if sid not in data:
+        return None
+    server = ensure_server_schema(sid, data)
+    drops = server.get("drops", {})
+    total_drops = drops.get("total_drops", 0)
+    total_owo = drops.get("total_owo", 0)
+    dev_fee = int(total_owo * 0.10)  # 10%
+    total_needed = total_owo + dev_fee
+    history = drops.get("history", [])
+    return {
+        "total_drops": total_drops,
+        "total_owo": total_owo,
+        "dev_fee": dev_fee,
+        "total_needed": total_needed,
+        "history": history
+    }
+
+def backup_and_reset_server(sid: str):
+    """
+    Move current drops data into backups keyed by timestamp,
+    then clear drops data (but keep config).
+    """
+    data = load_data()
+    if sid not in data:
+        return False
+    server = data[sid]
+    server.setdefault("backups", {})
+    drops_snapshot = server.get("drops", {"total_drops":0, "total_owo":0, "history":[]})
+    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    server["backups"][timestamp] = {"drops": drops_snapshot}
+    # reset drops
+    server["drops"] = {"total_drops": 0, "total_owo": 0, "history": []}
+    atomic_save(DATA_FILE, data)
+    return timestamp
+
 
 # Load .env variables
 load_dotenv()
@@ -76,6 +170,10 @@ GIVEAWAY_DURATION = 0.334
 
 # Emoji's (bots own emojis to use)
 CONFETI_EMOJI = discord.PartialEmoji(name='confetti', id=1437356994142142514, animated=True) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
+
+# dev id
+DEV_ID = 1206904635420450856
+#DEV_ID = 123456789012345678 
 
 intents = discord.Intents.all()
 
@@ -101,8 +199,8 @@ class MyClient(commands.Bot):
             print("❌pay Channel not found!")
             return
         
-        await self.tree.sync()
-        print("Slash commands synced ✅")
+        #await self.tree.sync()
+        #print("Slash commands synced ✅")
 
         print(f"✅ Logged in as {self.user}")
     async def on_message(self, message):
@@ -117,12 +215,12 @@ class MyClient(commands.Bot):
 
             if self.msg_count >= self.MSG_NEEDED:
                 self.msg_count = 0
-                await self.start_giveaway(self.channel, 1, GIVEAWAY_DURATION, f"{self.PRIZE:,} OWO")
+                await self.start_giveaway(self.channel, 1, GIVEAWAY_DURATION, f"{self.PRIZE:,} OWO", True)
                 
 
         await self.process_commands(message)
 
-    async def start_giveaway(self, channel, winners, giveaway_duration, prize: str):
+    async def start_giveaway(self, channel, winners, giveaway_duration, prize: str, is_chat_drop: bool):
         end_time = int(time.time()) + (int(giveaway_duration * 60)) + 2
         embed = discord.Embed(
             title="Giveaway Started! <a:confetti:1437356994142142514>",
@@ -131,14 +229,16 @@ class MyClient(commands.Bot):
         )
         embed.set_footer(text=f"Picking winner in {giveaway_duration} minutes!")
         msg = await channel.send(embed=embed)
-        giveaway_msg = msg  # store it for later
 
         # add reaction to gwy msg so ppls can react on it to join
         await msg.add_reaction("<a:confetti:1437356994142142514>")
 
+        giveaway_msg = msg  # store it for later
+
+        
+
         await asyncio.sleep(int(giveaway_duration * 60))
 
-        msg = await channel.fetch_message(msg.id)
         reaction = discord.utils.get(msg.reactions, emoji=CONFETI_EMOJI)
 
         if not reaction:
@@ -177,6 +277,12 @@ class MyClient(commands.Bot):
             winner_mention = winner_mention + f"{winner.mention} "
 
         await self.paychannel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
+
+        # suppose winners_list is a list of Member objects or IDs
+        winner_ids = [w.id if hasattr(w, "id") else int(w) for w in winners_list]
+        if is_chat_drop:
+            update_drop_data(channel.guild.id, self.PRIZE, winner_ids)
+
 
         result_embed = discord.Embed(
             title="🎊 Winner!",
@@ -242,11 +348,69 @@ def start():
 
 client = start()
 
+# /drop command
 @client.tree.command(name="drop", description="send a drop to currrent channel.")
 async def drop(interaction: discord.Interaction, minutes: float, prize: str, winners: int):
     await interaction.response.send_message(
         f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each"
         )
-    await client.start_giveaway(interaction.channel, winners, minutes, prize)
+    await client.start_giveaway(interaction.channel, winners, minutes, prize, False)
+
+# /stats command
+@client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
+@app_commands.describe(server_id="Optional server id (dev only)")
+async def stats(interaction: discord.Interaction, server_id: str = None):
+    sid = server_id or str(interaction.guild_id)
+    data = load_data()
+    if sid not in data:
+        await interaction.response.send_message("❌ Server not found.", ephemeral=True)
+        return
+
+    # permission: server owner or dev
+    if interaction.user.id != DEV_ID:
+        # must be querying current server and be owner
+        if str(interaction.guild_id) != sid or interaction.user.id != interaction.guild.owner_id:
+            await interaction.response.send_message("❌ Only the server owner (or dev) can view these stats.", ephemeral=True)
+            return
+
+    stats = get_server_stats(sid)
+    if not stats:
+        await interaction.response.send_message("No drops recorded for this server.", ephemeral=True)
+        return
+
+    # build embed
+    embed = discord.Embed(title=f"📊 Giveaway Stats — {sid}", color=MAIN_COLOR)
+    embed.add_field(name="Total drops", value=str(stats["total_drops"]), inline=True)
+    embed.add_field(name="Total OWO paid out", value=f"{stats['total_owo']:,}", inline=True)
+    embed.add_field(name="Developer fee (10%)", value=f"{stats['dev_fee']:,}", inline=True)
+    embed.add_field(name="Total OWO needed", value=f"{stats['total_needed']:,}", inline=True)
+    # show last few winners (if any)
+    history = stats.get("history", [])[-6:]  # last 6 entries
+    if history:
+        hist_lines = []
+        for h in history[::-1]:
+            time_str = h.get("time")
+            winners = ", ".join(h.get("winners", []))
+            prize = f"{h.get('prize', 0):,}"
+            hist_lines.append(f"{time_str} — {winners} — {prize} OWO")
+        embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# /reset command (dev only)
+@client.tree.command(name="reset_drops", description="(Dev only) Backup and reset drops data for a server")
+@app_commands.describe(server_id="Server ID to reset (defaults to current server)")
+async def reset_drops(interaction: discord.Interaction, server_id: str = None):
+    if interaction.user.id != DEV_ID:
+        await interaction.response.send_message("❌ Only the bot developer can run this.", ephemeral=True)
+        return
+    sid = server_id or str(interaction.guild_id)
+    data = load_data()
+    if sid not in data:
+        await interaction.response.send_message("❌ Server not found.", ephemeral=True)
+        return
+
+    ts = backup_and_reset_server(sid)
+    await interaction.response.send_message(f"✅ Backed up drops for server `{sid}` into backups at `{ts}` and reset counts.", ephemeral=True)
 
 client.run(TOKEN)
