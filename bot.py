@@ -169,7 +169,7 @@ ERROR_COLOR = 0xFF0000
 GIVEAWAY_DURATION = 0.334
 
 # Emoji's (bots own emojis to use)
-CONFETI_EMOJI = discord.PartialEmoji(name='confetti', id=1437356994142142514, animated=True) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
+CONFETTI_EMOJI = discord.PartialEmoji(name='confetti', id=1438155456823431343, animated=True) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
 
 # dev id
 DEV_ID = 1206904635420450856
@@ -223,30 +223,30 @@ class MyClient(commands.Bot):
     async def start_giveaway(self, channel, winners, giveaway_duration, prize: str, is_chat_drop: bool):
         end_time = int(time.time()) + (int(giveaway_duration * 60)) + 2
         embed = discord.Embed(
-            title="Giveaway Started! <a:confetti:1437356994142142514>",
-            description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1437356994142142514> to join!",
+            title="Giveaway Started! <a:confetti:1438155456823431343>",
+            description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
             color=MAIN_COLOR
         )
         embed.set_footer(text=f"Picking winner in {giveaway_duration} minutes!")
         msg = await channel.send(embed=embed)
 
         # add reaction to gwy msg so ppls can react on it to join
-        await msg.add_reaction("<a:confetti:1437356994142142514>")
+        await msg.add_reaction(CONFETTI_EMOJI)
+        
 
         giveaway_msg = msg  # store it for later
 
-        
+        await asyncio.sleep(int(giveaway_duration * 60)) # sleep for the duration
 
-        await asyncio.sleep(int(giveaway_duration * 60))
-
-        reaction = discord.utils.get(msg.reactions, emoji=CONFETI_EMOJI)
+        msg = await channel.fetch_message(msg.id)
+        reaction = discord.utils.get(msg.reactions, emoji=CONFETTI_EMOJI)
 
         if not reaction:
             print("reactions not found")
             try:
                 await giveaway_msg.reply("❌ No reactions. Giveaway canceled.")
                 result_embed_edit = discord.Embed(
-                    title="Giveaway Ended! <a:confetti:1437356994142142514>",
+                    title="Giveaway Ended! <a:confetti:1438155456823431343>",
                     description=f"❌ No reactions. Giveaway canceled.",
                     color=ERROR_COLOR
                     )
@@ -262,7 +262,7 @@ class MyClient(commands.Bot):
             try:
                 await giveaway_msg.reply("❌ No valid users entered.")
                 result_embed_edit = discord.Embed(
-                title="Giveaway Ended! <a:confetti:1437356994142142514>",
+                title="Giveaway Ended! <a:confetti:1438155456823431343>",
                 description=f"❌ No valid users entered.",
                 color=ERROR_COLOR)
                 await msg.edit(embed=result_embed_edit)
@@ -286,7 +286,7 @@ class MyClient(commands.Bot):
 
         result_embed = discord.Embed(
             title="🎊 Winner!",
-            description=f"congratulations you have won **{prize}** <a:confetti:1437356994142142514><a:confetti:1437356994142142514>",
+            description=f"congratulations you have won **{prize}** <a:confetti:1438155456823431343>",
             color=SUCCESS_COLOR
         )
         
@@ -309,7 +309,7 @@ class MyClient(commands.Bot):
                 allowed_mentions=discord.AllowedMentions(users=True)
                 )
         result_embed_edit = discord.Embed(
-            title="Giveaway Ended! <a:confetti:1437356994142142514>",
+            title="Giveaway Ended! <a:confetti:1438155456823431343>",
             description=f"Participant(s): {len(users)}!\n{winner_mention} won **{prize}**",
             color=SUCCESS_COLOR
         )
