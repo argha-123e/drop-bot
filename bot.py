@@ -72,7 +72,7 @@ SUCCESS_COLOR = 0x43FF33
 ERROR_COLOR = 0xFF0000
 
 # Giveaway timer(seconds)
-GIVEAWAY_DURATION = 10
+GIVEAWAY_DURATION = 0.334
 
 # Emoji's (bots own emojis to use)
 CONFETI_EMOJI = discord.PartialEmoji(name='confetti', id=1437356994142142514, animated=True) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
@@ -100,16 +100,15 @@ class MyClient(commands.Bot):
         if self.paychannel is None:
             print("❌pay Channel not found!")
             return
-        #await self.tree.sync()
-        #print("Slash commands synced ✅")
+        
+        await self.tree.sync()
+        print("Slash commands synced ✅")
 
         print(f"✅ Logged in as {self.user}")
     async def on_message(self, message):
         # block own/bot msgs
         if message.author.bot:
             return
-        
-        
         
         # only count messages in giveaway channel
         if message.channel.id == self.TARGET_CHANNEL_ID:
@@ -118,56 +117,57 @@ class MyClient(commands.Bot):
 
             if self.msg_count >= self.MSG_NEEDED:
                 self.msg_count = 0
-                await self.start_giveaway(self.channel, 1)
+                await self.start_giveaway(self.channel, 1, GIVEAWAY_DURATION, f"{self.PRIZE:,} OWO")
                 
 
         await self.process_commands(message)
 
-    async def start_giveaway(self, channel, winners):
-        end_time = int(time.time()) + GIVEAWAY_DURATION + 2
+    async def start_giveaway(self, channel, winners, giveaway_duration, prize: str):
+        end_time = int(time.time()) + (int(giveaway_duration * 60)) + 2
         embed = discord.Embed(
             title="Giveaway Started! <a:confetti:1437356994142142514>",
-            description=f"Winners: {winners}\nPrize **{self.PRIZE:,} OWO**\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1437356994142142514> to join!",
+            description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1437356994142142514> to join!",
             color=MAIN_COLOR
         )
-        embed.set_footer(text=f"Picking winner in {GIVEAWAY_DURATION} seconds!")
+        embed.set_footer(text=f"Picking winner in {giveaway_duration} minutes!")
         msg = await channel.send(embed=embed)
-        self.last_giveaway_msg = msg  # store it for later
+        giveaway_msg = msg  # store it for later
 
         # add reaction to gwy msg so ppls can react on it to join
         await msg.add_reaction("<a:confetti:1437356994142142514>")
 
-        await asyncio.sleep(GIVEAWAY_DURATION)
+        await asyncio.sleep(int(giveaway_duration * 60))
 
         msg = await channel.fetch_message(msg.id)
         reaction = discord.utils.get(msg.reactions, emoji=CONFETI_EMOJI)
 
         if not reaction:
-            await self.last_giveaway_msg.reply("❌ No reactions. Giveaway canceled.")
-            result_embed_edit = discord.Embed(
-                title="Giveaway Ended! <a:confetti:1437356994142142514>",
-                description=f"❌ No reactions. Giveaway canceled.",
-                color=ERROR_COLOR
-            )
+            print("reactions not found")
             try:
+                await giveaway_msg.reply("❌ No reactions. Giveaway canceled.")
+                result_embed_edit = discord.Embed(
+                    title="Giveaway Ended! <a:confetti:1437356994142142514>",
+                    description=f"❌ No reactions. Giveaway canceled.",
+                    color=ERROR_COLOR
+                    )
                 await msg.edit(embed=result_embed_edit)
             except:
-                print("reactions not found")
+                print("drop msg not found")
             return
         users = [user async for user in reaction.users() if not user.bot]
         users = [u for u in users if not u.bot]  # Remove bots
 
         if not users:
-            await self.last_giveaway_msg.reply("❌ No valid users entered.")
-            result_embed_edit = discord.Embed(
+            print("users not found")
+            try:
+                await giveaway_msg.reply("❌ No valid users entered.")
+                result_embed_edit = discord.Embed(
                 title="Giveaway Ended! <a:confetti:1437356994142142514>",
                 description=f"❌ No valid users entered.",
-                color=ERROR_COLOR
-            )
-            try:
+                color=ERROR_COLOR)
                 await msg.edit(embed=result_embed_edit)
             except:
-                print("valid users not found")
+                print("drop msg not found")
             return
 
         winners_list = random.sample(users, min(winners, len(users)))
@@ -176,23 +176,23 @@ class MyClient(commands.Bot):
         for winner in winners_list:
             winner_mention = winner_mention + f"{winner.mention} "
 
-        await self.paychannel.send(f"{winner_mention}won **{self.PRIZE:,} OWO**", allowed_mentions=discord.AllowedMentions(users=False))
+        await self.paychannel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
 
         result_embed = discord.Embed(
             title="🎊 Winner!",
-            description=f"congratulations you have won **{self.PRIZE:,} OWO** <a:confetti:1437356994142142514><a:confetti:1437356994142142514>",
+            description=f"congratulations you have won **{prize}** <a:confetti:1437356994142142514><a:confetti:1437356994142142514>",
             color=SUCCESS_COLOR
         )
         
-        if hasattr(self, "last_giveaway_msg") and self.last_giveaway_msg:
+        if giveaway_msg:
             try:
             # ✅ Confirm the message still exists on Discord
-                find_msg = await self.last_giveaway_msg.channel.fetch_message(self.last_giveaway_msg.id)
+                find_msg = await giveaway_msg.channel.fetch_message(giveaway_msg.id)
             except discord.NotFound:
                 print("⚠️ Giveaway message not found (deleted?)")
                 find_msg = None
         if find_msg:   
-            await self.last_giveaway_msg.reply(
+            await giveaway_msg.reply(
                 content=winner_mention,
                 embed=result_embed,
                 allowed_mentions=discord.AllowedMentions(users=True))
@@ -204,14 +204,16 @@ class MyClient(commands.Bot):
                 )
         result_embed_edit = discord.Embed(
             title="Giveaway Ended! <a:confetti:1437356994142142514>",
-            description=f"Participant(s): {len(users)}!\n{winner_mention} won **{self.PRIZE:,} OWO**",
+            description=f"Participant(s): {len(users)}!\n{winner_mention} won **{prize}**",
             color=SUCCESS_COLOR
         )
         try:
             await msg.edit(embed=result_embed_edit)
         except:
             print("gwy msg not found")
-        self.last_giveaway_msg = None
+        giveaway_msg = None
+
+    
 
 
 def get_data():
@@ -239,11 +241,12 @@ def start():
     
 
 client = start()
+
+@client.tree.command(name="drop", description="send a drop to currrent channel.")
+async def drop(interaction: discord.Interaction, minutes: float, prize: str, winners: int):
+    await interaction.response.send_message(
+        f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each"
+        )
+    await client.start_giveaway(interaction.channel, winners, minutes, prize)
+
 client.run(TOKEN)
-
-
-
-#@client.tree.command(name="drop", description="send a drop to currrent channel.")
-#async def drop(interaction: discord.Interaction, minutes: int, prize: str, winners: int):
-#    await interaction.response.send_message(f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each")
-#    self.start_
