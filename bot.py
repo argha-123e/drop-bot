@@ -78,12 +78,12 @@ def _sanitize_prize(Prize):
 def ensure_server_schema(sid: str, data: dict):
     """Ensure drops and backups keys exist for a server dict (mutates data)."""
     server = data.setdefault(sid, {})
+    server.setdefault("msg_count", 0)
     server.setdefault("drops", {"total_drops": 0, "total_owo": 0, "history": []})
     server.setdefault("backups", {})  # map timestamp -> snapshot
     return server
 
 def update_drop_data(server_id: int, Prize, winners_list):
-    print(Prize)
     """
     Record a finished giveaway.
     - server_id: int or str
@@ -101,8 +101,7 @@ def update_drop_data(server_id: int, Prize, winners_list):
     drops = server["drops"]
 
     prize_val = _sanitize_prize(Prize)
-    print(589375975375757357)
-    print(prize_val)
+
     # increment totals
     drops["total_drops"] = drops.get("total_drops", 0) + 1
     drops["total_owo"] = drops.get("total_owo", 0) + prize_val
@@ -116,6 +115,7 @@ def update_drop_data(server_id: int, Prize, winners_list):
 
     atomic_save(DATA_FILE, data)
     return True
+
 
 def get_server_stats(sid: str):
     """Return a dict of computed stats for server sid (string)."""
@@ -148,12 +148,26 @@ def backup_and_reset_server(sid: str):
     server = data[sid]
     server.setdefault("backups", {})
     drops_snapshot = server.get("drops", {"total_drops":0, "total_owo":0, "history":[]})
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d_%H-%M-%S")
     server["backups"][timestamp] = {"drops": drops_snapshot}
     # reset drops
     server["drops"] = {"total_drops": 0, "total_owo": 0, "history": []}
     atomic_save(DATA_FILE, data)
     return timestamp
+
+async def msg_count_saver(self):
+    while True:
+        await asyncio.sleep(30)
+        data = load_data()
+        for server_id in self.SERVER_IDs:
+            sid = str(server_id)
+            server = ensure_server_schema(sid, data)
+            if self.msg_count[sid] == server["msg_count"]:
+                pass
+            else:
+                server["msg_count"] = self.msg_count[sid]
+        atomic_save(DATA_FILE, data)
+
 
 
 # Load .env variables
@@ -169,7 +183,10 @@ ERROR_COLOR = 0xFF0000
 GIVEAWAY_DURATION = 0.334
 
 # Emoji's (bots own emojis to use)
-CONFETTI_EMOJI = discord.PartialEmoji(name='confetti', id=1438155456823431343, animated=True) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
+CONFETTI_EMOJI = discord.PartialEmoji(
+    name='confetti', id=1438155456823431343, 
+    animated=True 
+    ) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
 
 # dev id
 DEV_ID = 1206904635420450856
@@ -178,50 +195,58 @@ DEV_ID = 1206904635420450856
 intents = discord.Intents.all()
 
 class MyClient(commands.Bot):
-    def __init__(self, SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL):
+    def __init__(self, SERVER_IDs, TARGET_CHANNEL_ID):
         super().__init__(command_prefix=".", intents=intents)
-        self.msg_count = 0
-        self.TARGET_CHANNEL_ID = TARGET_CHANNEL_ID
-        self.SERVER_ID = SERVER_ID
-        self.PRIZE = PRIZE
-        self.MSG_NEEDED = MSG_NEEDED
-        self.prefix = prefix
-        self.PAY_CHANNEL = PAY_CHANNEL
 
+        self.TARGET_CHANNEL_ID = TARGET_CHANNEL_ID
+        self.SERVER_IDs = SERVER_IDs
+        self.msg_count = {}
+
+        data = load_data()
+        for server_id in self.SERVER_IDs:
+            sid = str(server_id)
+            server = ensure_server_schema(sid, data)
+            self.msg_count[sid] = server["msg_count"]
     async def on_ready(self):
         await self.tree.sync()
-        self.channel = self.get_channel(self.TARGET_CHANNEL_ID)
-        if self.channel is None:
-            print("❌ general Channel not found!")
-            return
-        self.paychannel = self.get_channel(self.PAY_CHANNEL)
-        if self.paychannel is None:
-            print("❌pay Channel not found!")
-            return
-        
-        #await self.tree.sync()
-        #print("Slash commands synced ✅")
+        print("Slash commands synced ✅")
 
         print(f"✅ Logged in as {self.user}")
+        await msg_count_saver(self)
     async def on_message(self, message):
         # block own/bot msgs
         if message.author.bot:
             return
         
-        # only count messages in giveaway channel
-        if message.channel.id == self.TARGET_CHANNEL_ID:
-            self.msg_count += 1
-            print(f" Count: {self.msg_count}/{self.MSG_NEEDED}")
 
-            if self.msg_count >= self.MSG_NEEDED:
-                self.msg_count = 0
-                await self.start_giveaway(self.channel, 1, GIVEAWAY_DURATION, f"{self.PRIZE:,} OWO", True)
-                
+        if message.channel.id in self.TARGET_CHANNEL_ID:
+            print("msg recived from target channel")
+            sid = str(message.guild.id)
+            data = load_data()
+            server = ensure_server_schema(sid, data)
+            msg_needed = server["msg_needed"]
+            prize = server["prize"]
+            self.msg_count[sid] += 1
+            print(f" Count: {self.msg_count[sid]}/{msg_needed}")
 
+            if self.msg_count[sid] >= msg_needed:
+                self.msg_count[sid] = 0
+                        
+                await self.start_giveaway(
+                    self.get_channel(server["channel"]), 
+                    1, GIVEAWAY_DURATION, prize, True,
+                    self.get_channel(server["pay_channel"])
+                )
+            
         await self.process_commands(message)
 
-    async def start_giveaway(self, channel, winners, giveaway_duration, prize: str, is_chat_drop: bool):
-        end_time = int(time.time()) + (int(giveaway_duration * 60)) + 2
+    async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop: bool, pay_channel):
+        if type(PRIZE) == str:
+            prize = PRIZE
+        elif type(PRIZE) == int:
+            prize = f"{PRIZE:,} OWO"
+
+        end_time = int(time.time()) + (int(giveaway_duration * 60))
         embed = discord.Embed(
             title="Giveaway Started! <a:confetti:1438155456823431343>",
             description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
@@ -276,12 +301,16 @@ class MyClient(commands.Bot):
         for winner in winners_list:
             winner_mention = winner_mention + f"{winner.mention} "
 
-        await self.paychannel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
+        
 
         # suppose winners_list is a list of Member objects or IDs
         winner_ids = [w.id if hasattr(w, "id") else int(w) for w in winners_list]
+
+
         if is_chat_drop:
-            update_drop_data(channel.guild.id, self.PRIZE, winner_ids)
+            print(PRIZE)
+            update_drop_data(channel.guild.id, PRIZE, winner_ids)
+            await pay_channel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
 
 
         result_embed = discord.Embed(
@@ -324,25 +353,25 @@ class MyClient(commands.Bot):
 
 def get_data():
         data = load_data()
-        temp = []
         servers = []
+        channel_ids = []
+        server_ids = []
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         for SERVER_ID, details in data.items():
-            prefix = details.get("prefix", ",")
             TARGET_CHANNEL_ID = details.get("channel", "null")
-            PRIZE = details.get("prize", 15000)
-            MSG_NEEDED = details.get("msg_needed", 100)
-            PAY_CHANNEL = details.get("pay_channel", None)
-            servers.append((SERVER_ID, TARGET_CHANNEL_ID, PRIZE, MSG_NEEDED, prefix, PAY_CHANNEL))
-            servers = list(servers[0])
-        return servers
+            servers.append((SERVER_ID, TARGET_CHANNEL_ID, ))
+            channel_ids.append(TARGET_CHANNEL_ID)
+            server_ids.append(SERVER_ID)
+        return [server_ids, channel_ids]
+
+
 
 def start():
     servers = get_data()
     if not servers:
         print("❌ No valid token found.")
         return
-    client = MyClient(servers[0], servers[1], servers[2], servers[3], servers[4], servers[5])
+    client = MyClient(servers[0], servers[1])
     return client
     
 
@@ -354,7 +383,7 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
     await interaction.response.send_message(
         f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each"
         )
-    await client.start_giveaway(interaction.channel, winners, minutes, prize, False)
+    await client.start_giveaway(interaction.channel, winners, minutes, prize, False, None)
 
 # /stats command
 @client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
