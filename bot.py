@@ -220,7 +220,6 @@ class MyClient(commands.Bot):
         
 
         if message.channel.id in self.TARGET_CHANNEL_ID:
-            print("msg recived from target channel")
             sid = str(message.guild.id)
             data = load_data()
             server = ensure_server_schema(sid, data)
@@ -381,7 +380,8 @@ client = start()
 @client.tree.command(name="drop", description="send a drop to currrent channel.")
 async def drop(interaction: discord.Interaction, minutes: float, prize: str, winners: int):
     await interaction.response.send_message(
-        f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each"
+        f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each",
+        ephemeral=True
         )
     await client.start_giveaway(interaction.channel, winners, minutes, prize, False, None)
 
@@ -389,6 +389,7 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
 @client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
 @app_commands.describe(server_id="Optional server id (dev only)")
 async def stats(interaction: discord.Interaction, server_id: str = None):
+
     sid = server_id or str(interaction.guild_id)
     data = load_data()
     if sid not in data:
