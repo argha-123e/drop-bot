@@ -4,5 +4,4 @@ __pycache__/
 *.pyc
 .env
 .vscode
-data.json
-test/
+data.db
