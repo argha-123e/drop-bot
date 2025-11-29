@@ -69,7 +69,6 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
         reaction = discord.utils.get(msg.reactions, emoji=CONFETTI_EMOJI)
 
         if not reaction:
-            print("reactions not found")
             try:
                 await giveaway_msg.reply("❌ No reactions. Giveaway canceled.")
                 result_embed_edit = discord.Embed(
@@ -79,14 +78,12 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
                     )
                 await msg.edit(embed=result_embed_edit)
             except:
-                print("drop msg not found")
                 self.gwy_running -= 1
             return False
         users = [user async for user in reaction.users() if not user.bot]
         users = [u for u in users if not u.bot]  # Remove bots
 
         if not users:
-            print("users not found")
             self.gwy_running -= 1
 
             try:
@@ -97,7 +94,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
                 color=ERROR_COLOR)
                 await msg.edit(embed=result_embed_edit)
             except:
-                print("drop msg not found")
+                pass
             return False
 
         winners_list = random.sample(users, min(winners, len(users)))
@@ -128,7 +125,6 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             # ✅ Confirm the message still exists on Discord
                 find_msg = await giveaway_msg.channel.fetch_message(giveaway_msg.id)
             except discord.NotFound:
-                print("⚠️ Giveaway message not found (deleted?)")
                 find_msg = None
         if find_msg:   
             await giveaway_msg.reply(
@@ -149,7 +145,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
         try:
             await msg.edit(embed=result_embed_edit)
         except:
-            print("gwy msg not found")
+            pass
 
         return True
     except asyncio.CancelledError:
