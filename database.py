@@ -76,11 +76,6 @@ DB_PATH = "data.db"
 
 PROCESS = None
 
-if sys.platform == "win32":
-    CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
-else:
-    CREATE_NO_WINDOW = None
-
 # class db_panel:
 def start_sqlite_web():
     global PROCESS
@@ -88,20 +83,35 @@ def start_sqlite_web():
     if PROCESS and PROCESS.poll() is None:
         print("[DB PANEL] Already running")
         return
-
-    PROCESS = subprocess.Popen(
-        [
-            "python",
-            "-m", "sqlite_web",
-            DB_PATH,
-            "--host", "0.0.0.0",
-            "--port", str(PORT),
-            "--password", PASSWORD
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW
-    )
+    
+    if sys.platform == "win32":
+        PROCESS = subprocess.Popen(
+            [
+                "python",
+                "-m", "sqlite_web",
+                DB_PATH,
+                "--host", "0.0.0.0",
+                "--port", str(PORT),
+                "--password", PASSWORD
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+    else:
+        PROCESS = subprocess.Popen(
+            [
+                "python",
+                "-m", "sqlite_web",
+                DB_PATH,
+                "--host", "0.0.0.0",
+                "--port", str(PORT),
+                "--password", PASSWORD
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            )
+        
     # track()
 
     print(f"[DB PANEL] Running on http://127.0.0.1:{PORT}")
