@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from os import getenv
+from colorama import Fore
 
 # dev id
 DEV_ID:int = 1206904635420450856
@@ -17,9 +18,9 @@ TOKEN: str = getenv("TOKEN")
 
 # owo plans
 PLAN_OWO: dict = {
-    100: 500_000,
+    100: 750_000,
     250: 1_000_000,
-    500: 2_000_000,
+    500: 2_500_000,
     1000: 4_000_000,
     5000: 7_000_000,
     10000: 10_000_000,
@@ -43,3 +44,11 @@ func_WEBHOOK: str = getenv("func_WEBHOOK")
 sql_WEBHOOK: str = getenv("sql_WEBHOOK")
 gwy_WEBHOOK: str = getenv("gwy_WEBHOOK")
 data_backup_WEBHOOK: str = getenv("data_db_backup")
+
+# Print colors
+RED = Fore.RED
+GREEN = Fore.GREEN
+BLUE = Fore.BLUE
+YELLOW = Fore.YELLOW
+CYAN = Fore.CYAN
+RESET = Fore.RESET

@@ -183,9 +183,9 @@ class MyClient(commands.Bot):
                     self.msg_count[sid] = server["msg_count"]
     async def on_ready(self):
         await self.tree.sync()
-        print("Slash commands synced ✅")
+        print(GREEN+"Slash commands synced ✅")
 
-        print(f"✅ Logged in as {self.user}")
+        print(f"✅  Logged in as {self.user}"+RESET)
         SM.check_subscriptions()
         await msg_count_saver(self)
     async def on_message(self, message):
@@ -201,7 +201,6 @@ class MyClient(commands.Bot):
             sid = str(message.guild.id)
             server = db.get_as_dict("servers", server_id=sid)[0]
             if not server["sub"]:
-                print(f"server {message.guild.id} dose not have a ongoing subscription")
                 return
 
 
@@ -213,7 +212,7 @@ class MyClient(commands.Bot):
             if not server["sub"]:
                 return
             self.msg_count[sid] += 1
-            print(f"[{self.get_guild(message.guild.id).name}] Count: {self.msg_count[sid]}/{msg_needed}")
+            print(CYAN+f"[{self.get_guild(message.guild.id).name}] Count: {self.msg_count[sid]}/{msg_needed}"+RESET)
 
             if self.msg_count[sid] >= msg_needed:
                 self.msg_count[sid] = 0    
@@ -249,7 +248,7 @@ def start():
         client = MyClient(data[0], data[1], data[2])
         return client
     else:
-        print("❌ No valid token found.")
+        print(RED+"❌ No valid token found."+RESET)
 
 
 client = start()
@@ -281,6 +280,9 @@ async def on_msg_handler(self, message):
                 await cancel_sub(message, int(args[0]))
             if cmd == "sql":
                 await sql_handler(self, message)
+                self.SERVER_IDs = db.get_server_ids()
+                self.TARGET_CHANNEL_ID = db.get_channel_ids()
+                SM.check_subscriptions()
 spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
 ################################################################################################################
