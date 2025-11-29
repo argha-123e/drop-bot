@@ -278,8 +278,10 @@ async def on_msg_handler(self, message):
                 try:
                     try:
                         await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], args[3])
+                        setup_msg_count()
                     except:
                         await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], None)
+                        setup_msg_count
                 except:
                     await message.reply(f"wrong syntax\ntry: ``.addsub <server id> <plan type> <months> <tier>``")
             if cmd == "cancel_sub":
@@ -289,6 +291,7 @@ async def on_msg_handler(self, message):
                 self.SERVER_IDs = db.get_server_ids()
                 self.TARGET_CHANNEL_ID = db.get_channel_ids()
                 SM.check_subscriptions()
+                
 spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
 ################################################################################################################
