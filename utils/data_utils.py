@@ -2,34 +2,6 @@ from .constants import *
 import requests
 import datetime as dt
 
-def update_drop_data(db, server_id: int, PRIZE: int, winner_ids: list):
-    import datetime
-    drops = db.get_as_dict(table="drops", server_id=server_id, remark="entry")
-    server = db.get_as_dict(table="servers", server_id=server_id)
-    server = server[0]
-
-    total_drops:int =  server["total_drops"]
-    if total_drops == 0:
-        total_drops = len(drops)
-
-    total_owo:int = server["total_owo"]
-    if total_owo == 0:
-        for drop in drops:
-            total_owo += drop["prize"]
-    # increment totals
-    total_drops += 1
-
-    total_owo += PRIZE
-
-    db.insert(
-        table="drops",server_id=server_id , winner=winner_ids[0], prize=PRIZE, 
-        time=datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), remark="entry"
-        )
-    db.update(
-        table="servers", pk_name="server_id", pk_value=server_id, 
-        total_drops=total_drops, total_owo=total_owo
-    )
-
     # SQL cmd
 ##################################################################################################################
 async def sql_handler(self, message):
@@ -73,7 +45,7 @@ async def pretty_json(self, message, as_dict):
     else:
         await message.channel.send(f"```json\n{pretty_json}\n```")
 
-def backup_data_db():
+def backup_data():
     file_path = "data.db"
 
     with open(file_path, "rb") as f:
@@ -87,4 +59,4 @@ def backup_data_db():
         }
 
         response = requests.post(data_backup_WEBHOOK, data=data, files=files)
-        print(f"data backed up, response: \n{response.content}")
+        print(f"{time}data backed up, response: \n{response}")

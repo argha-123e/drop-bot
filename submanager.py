@@ -51,7 +51,7 @@ class SubscriptionManager:
 
         # type mismatch → user must manually cancel
         if old_type != sub_type and old_value != value:
-            return [False, "A different subscription type already exists. Use `.cancel_sub` first."]
+            return [False, "A different subscription type or tier already exists. Use `.cancel_sub` first or let it expire"]
 
         # -- monthly extension --
         if sub_type == "monthly":

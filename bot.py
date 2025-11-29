@@ -65,7 +65,7 @@ db.cur.execute("""
 if not db.exists(table="servers", server_id=1437310569387655249):
     db.insert(
         "servers", server_id =1437310569387655249, # insert a row in a table
-        channel=1437310570054422660, pay_channel=1437502335361224825, msg_needed=5, 
+        channel=1443974858445819955, pay_channel=1443974900929790072, msg_needed=5, 
         prize=15000, gwy_duration=.25, msg_count=0, total_drops=0, total_owo=0, sub=1
         )
 
@@ -139,7 +139,7 @@ def get_server_stats(sid: int):
 
 async def msg_count_saver(self):
     cycled:int = 0
-    backup_data_db()
+    backup_data()
     while True:
         servers = db.get_as_dict("servers")
         for server_id in self.SERVER_IDs:
@@ -157,7 +157,7 @@ async def msg_count_saver(self):
             self.TARGET_CHANNEL_ID = db.get_channel_ids()
             SM.check_subscriptions()
         elif cycled % 5 == 0:
-            backup_data_db()
+            backup_data()
         await asyncio.sleep(60)
         cycled += 1
 
@@ -228,15 +228,6 @@ class MyClient(commands.Bot):
                         )
                 self._gwy_tasks.append(task)          # track so you can cancel/inspect
                 self.gwy_running = len(self._gwy_tasks)
-
-
-
-                # await self.start_giveaway_helper(
-                #     self.get_channel(server["channel"]), 
-                #     1, server["gwy_duration"], prize, True,
-                #     self.get_channel(server["pay_channel"])
-                # )
-                # print(self.gwy_running)
             
     async def start_giveaway_helper(self, *args, **kwargs):
         return await start_giveaway(self, *args, **kwargs)
@@ -280,9 +271,12 @@ async def on_msg_handler(self, message):
                 await message.reply(f"Command: {cmd}\nArgs: {args}")
             if cmd == "add_sub":
                 try:
-                    await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], args[3])
+                    try:
+                        await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], args[3])
+                    except:
+                        await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], None)
                 except:
-                    await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], None)
+                    await message.reply(f"wrong syntax\ntry: ``.addsub <server id> <plan type> <months> <tier>``")
             if cmd == "cancel_sub":
                 await cancel_sub(message, int(args[0]))
             if cmd == "sql":
