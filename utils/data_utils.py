@@ -59,4 +59,4 @@ def backup_data():
         }
 
         response = requests.post(data_backup_WEBHOOK, data=data, files=files)
-        print(YELLOW+f"{time}data backed up, response code: {response.status_code}"+RESET)
+        print(YELLOW+f"{time} data backed up, response code: {response.status_code}"+RESET)

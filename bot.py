@@ -162,6 +162,14 @@ async def msg_count_saver(self):
         cycled += 1
 
 
+def setup_msg_count(self):
+    data = db.get_as_dict("servers")
+    for server_id in self.SERVER_IDs:
+        sid = str(server_id)
+        for server in data:
+            if server["server_id"] == server_id:
+                self.msg_count[sid] = server["msg_count"]
+
 # BOT CLASS
 intents = discord.Intents.all()
 class MyClient(commands.Bot):
@@ -176,11 +184,9 @@ class MyClient(commands.Bot):
         self.gwy_running:int = 0
         self._gwy_tasks:list =[]
 
-        for server_id in self.SERVER_IDs:
-            sid = str(server_id)
-            for server in DATA:
-                if server["server_id"] == server_id:
-                    self.msg_count[sid] = server["msg_count"]
+        setup_msg_count(self)
+
+
     async def on_ready(self):
         await self.tree.sync()
         print(GREEN+"Slash commands synced ✅")
