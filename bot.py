@@ -2,12 +2,16 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import asyncio
-# import random
-# import datetime
-# import time
+import requests
+
 # DATA BASE
 import database as DB
 db = DB.DB()
+
+import atexit
+
+DB.start_sqlite_web()
+atexit.register(DB.stop_sqlite_web)
 
 # giveaway command
 from giveaway_cmd import start_giveaway
@@ -19,8 +23,7 @@ from utils.constants import *
 # subscription manager
 import submanager as submgm
 
-webhook = "https://discord.com/api/webhooks/1441026150347571283/V4xZHJn1d_4xCLl4uI78q9RyUTlLXA9lVpKIxZygFUiIwqyBCrvNwvpOW1TIxWorbmon"
-SM = submgm.SubscriptionManager(db, webhook)
+SM = submgm.SubscriptionManager(db, sub_WEBHOOK)
 
 db.cur.execute('''
     CREATE TABLE IF NOT EXISTS servers (
@@ -65,6 +68,7 @@ if not db.exists(table="servers", server_id=1437310569387655249):
         channel=1437310570054422660, pay_channel=1437502335361224825, msg_needed=5, 
         prize=15000, gwy_duration=.25, msg_count=0, total_drops=0, total_owo=0, sub=1
         )
+
 
 def backup_and_reset_server(sid: str):
     """
@@ -134,7 +138,8 @@ def get_server_stats(sid: int):
         }
 
 async def msg_count_saver(self):
-    cycled :int= 0
+    cycled:int = 0
+    backup_data_db()
     while True:
         servers = db.get_as_dict("servers")
         for server_id in self.SERVER_IDs:
@@ -151,19 +156,9 @@ async def msg_count_saver(self):
             self.SERVER_IDs = db.get_server_ids()
             self.TARGET_CHANNEL_ID = db.get_channel_ids()
             SM.check_subscriptions()
-        await asyncio.sleep(10)
-        print("gwys running:- ", self.gwy_running)
-        await asyncio.sleep(10)
-        print("gwys running:- ", self.gwy_running)
-        await asyncio.sleep(10)
-        print("gwys running:- ", self.gwy_running)
-        await asyncio.sleep(10)
-        print("gwys running:- ", self.gwy_running)
-        await asyncio.sleep(10)
-        print("gwys running:- ", self.gwy_running)
-        await asyncio.sleep(10)
-        print("gwys running:- ", self.gwy_running)
-
+        elif cycled % 5 == 0:
+            backup_data_db()
+        await asyncio.sleep(60)
         cycled += 1
 
 
@@ -179,7 +174,7 @@ class MyClient(commands.Bot):
         self.msg_count = {}
 
         self.gwy_running:int = 0
-
+        self._gwy_tasks:list =[]
 
         for server_id in self.SERVER_IDs:
             sid = str(server_id)
@@ -222,12 +217,26 @@ class MyClient(commands.Bot):
 
             if self.msg_count[sid] >= msg_needed:
                 self.msg_count[sid] = 0    
-                await self.start_giveaway_helper(
-                    self.get_channel(server["channel"]), 
-                    1, server["gwy_duration"], prize, True,
-                    self.get_channel(server["pay_channel"])
-                )
-                print(self.gwy_running)
+
+
+                task = asyncio.create_task(
+                    self.start_giveaway_helper(
+                        self.get_channel(server["channel"]), 1, 
+                        server["gwy_duration"], prize, True, 
+                        self.get_channel(server["pay_channel"])
+                        )
+                        )
+                self._gwy_tasks.append(task)          # track so you can cancel/inspect
+                self.gwy_running = len(self._gwy_tasks)
+
+
+
+                # await self.start_giveaway_helper(
+                #     self.get_channel(server["channel"]), 
+                #     1, server["gwy_duration"], prize, True,
+                #     self.get_channel(server["pay_channel"])
+                # )
+                # print(self.gwy_running)
             
     async def start_giveaway_helper(self, *args, **kwargs):
         return await start_giveaway(self, *args, **kwargs)
@@ -243,7 +252,6 @@ def get_data():
         return [data, server_ids, channel_ids]
 
 
-
 def start():
     data = get_data()
     if data:
@@ -253,7 +261,7 @@ def start():
         print("❌ No valid token found.")
 
 
-client= start()
+client = start()
 
 # on_message cmds handler
 ########################################################################################################################
@@ -279,20 +287,24 @@ async def on_msg_handler(self, message):
                 await cancel_sub(message, int(args[0]))
             if cmd == "sql":
                 await sql_handler(self, message)
-
+spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
 ################################################################################################################
 async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str = None):
-    print("got cmd add_sub")
     # dev only
     if msg.author.id != DEV_ID:
         return await msg.channel.send("Not allowed.")
+    if server_id not in client.SERVER_IDs:
+        return await msg.channel.send("server not in ``servers`` table")
+
 
     if plan_type == "revshare":
         percent = float(arg1.strip("%")) / 100
         result = SM.add_sub(server_id, "revshare", percent)
-        print(result)
         if result[0]:
+            requests.post(sub_WEBHOOK, json={
+            "content": f"{spacer}\nSubscription added for server {server_id}\n## current server sub info\n```{result[2]}```"
+            })
             return await msg.channel.send(
                 f"Revshare subscription added for server `{server_id}` @ {percent*100}%\nreturn code: {result[1]}"
                 )
@@ -308,8 +320,10 @@ async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str = No
         return await msg.channel.send("Invalid tier.")
 
     result = SM.add_sub(server_id, "monthly", tier, months=months)
-    print(result)
     if result[0]:
+        requests.post(sub_WEBHOOK, json={
+            "content": f"{spacer}\nSubscription added for server {server_id}\n## current server sub info\n```{result[2]}```"
+        })
         return await msg.channel.send(
             f"Monthly subscription added:\nServer: `{server_id}`\n"
             f"Months: `{months}`\nTier: `{tier}` → {submgm.PLAN_OWO[tier]:,} OWO/mo\nreturn code: {result[1]}"
@@ -329,7 +343,7 @@ async def cancel_sub(msg, server_id: int):
 #########################################################################################################################
 
 # /drop command
-@client.tree.command(name="drop", description="send a drop to currrent channel.")
+@client.tree.command(name="drop", description="send a quick drop to currrent channel.")
 async def drop(interaction: discord.Interaction, minutes: float, prize: str, winners: int):
 
     if client.gwy_running > gwy_limit: # hard limit 100 gwys
@@ -340,6 +354,10 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
         await interaction.response.send_message("try drops under 1hrs (60 minutes)",ephemeral=True)
         return
     
+    if interaction.guild_id not in client.SERVER_IDs:
+        if not db.get_sub_status(interaction.guild_id):
+            return await interaction.response.send_message("this server isn't subscribed to Dropbot",ephemeral=True)
+
     await interaction.response.send_message(
         f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each",
         ephemeral=True

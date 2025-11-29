@@ -3,7 +3,6 @@ import asyncio
 import random
 import discord
 
-from utils.data_utils import update_drop_data
 from utils.constants import *
 
 # Emoji's (bots own emojis to use)
@@ -12,16 +11,43 @@ CONFETTI_EMOJI = discord.PartialEmoji(
     animated=True 
     ) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
 
+def update_drop_data(db, server_id: int, PRIZE: int, winner_ids: list):
+    import datetime
+    drops = db.get_as_dict(table="drops", server_id=server_id, remark="entry")
+    server = db.get_as_dict(table="servers", server_id=server_id)
+    server = server[0]
 
-async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop: bool, pay_channel):
-        self.gwy_running += 1
-        
+    total_drops:int =  server["total_drops"]
+    if total_drops == 0:
+        total_drops = len(drops)
+
+    total_owo:int = server["total_owo"]
+    if total_owo == 0:
+        for drop in drops:
+            total_owo += drop["prize"]
+    # increment totals
+    total_drops += 1
+
+    total_owo += PRIZE
+
+    db.insert(
+        table="drops",server_id=server_id , winner=winner_ids[0], prize=PRIZE, 
+        time=datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), remark="entry"
+        )
+    db.update(
+        table="servers", pk_name="server_id", pk_value=server_id, 
+        total_drops=total_drops, total_owo=total_owo
+    )
+
+async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop, pay_channel):
+    self.gwy_running = len(self._gwy_tasks)
+    try:
         if isinstance(PRIZE, str):
             prize = PRIZE
         elif type(PRIZE) == int:
             prize = f"{PRIZE:,} OWO"
 
-        end_time = int(time.time()) + (int(giveaway_duration * 60) - 4)
+        end_time = int(time.time()) + (int(giveaway_duration * 60))
         embed = discord.Embed(
             title="Giveaway Started! <a:confetti:1438155456823431343>",
             description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
@@ -35,6 +61,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
         
 
         giveaway_msg = msg  # store it for later
+
 
         await asyncio.sleep(int(giveaway_duration * 60)) # sleep for the duration
 
@@ -124,5 +151,15 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
         except:
             print("gwy msg not found")
 
-        self.gwy_running -= 1
         return True
+    except asyncio.CancelledError:
+        # handle external cancellation cleanly
+        try:
+            await channel.send("Giveaway cancelled (admin).")
+        except:
+            pass
+        raise
+    finally:
+        # cleanup: remove finished task from list
+        self._gwy_tasks = [t for t in self._gwy_tasks if not t.done()]
+        self.gwy_running = len(self._gwy_tasks)

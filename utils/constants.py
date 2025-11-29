@@ -36,3 +36,10 @@ gwy_limit = 100
 
 # gwy time limit
 gwy_time_limit:int = 60
+
+# logger webhooks 
+sub_WEBHOOK: str = getenv("sub_WEBHOOK")
+func_WEBHOOK: str = getenv("func_WEBHOOK")
+sql_WEBHOOK: str = getenv("sql_WEBHOOK")
+gwy_WEBHOOK: str = getenv("gwy_WEBHOOK")
+data_backup_WEBHOOK: str = getenv("data_db_backup")

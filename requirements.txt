@@ -2,3 +2,5 @@ discord
 colorama
 python-dotenv
 requests
+sqlite-web
+datetime

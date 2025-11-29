@@ -1,4 +1,6 @@
 from .constants import *
+import requests
+import datetime as dt
 
 def update_drop_data(db, server_id: int, PRIZE: int, winner_ids: list):
     import datetime
@@ -70,3 +72,19 @@ async def pretty_json(self, message, as_dict):
             await message.channel.send(f"```json\n{compact_json}\n```")
     else:
         await message.channel.send(f"```json\n{pretty_json}\n```")
+
+def backup_data_db():
+    file_path = "data.db"
+
+    with open(file_path, "rb") as f:
+        time = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d %H:%M:%S")
+        files = {
+            "file": ("data.db", f, "application/octet-stream")
+        }
+
+        data = {
+            "content": f"latest database backup [{time}]:"
+        }
+
+        response = requests.post(data_backup_WEBHOOK, data=data, files=files)
+        print(f"data backed up, response: \n{response.content}")

@@ -4,9 +4,6 @@ import requests
 from utils.constants import *
 
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1441026150347571283/V4xZHJn1d_4xCLl4uI78q9RyUTlLXA9lVpKIxZygFUiIwqyBCrvNwvpOW1TIxWorbmon"
-
-
 class SubscriptionManager:
     def __init__(self, db, webhook_url):
         
@@ -42,7 +39,7 @@ class SubscriptionManager:
                 months=months
             )
             self.check_subscriptions()
-            return [True, "Subscription added."]
+            return [True, "Subscription added.", db.get_as_dict("subscriptions", server_id=server_id)[0]]
 
         # if subscription already exists
         existing = db.get_as_dict("subscriptions", server_id=server_id)[0]
@@ -54,7 +51,7 @@ class SubscriptionManager:
 
         # type mismatch → user must manually cancel
         if old_type != sub_type and old_value != value:
-            return "A different subscription type already exists. Use `.cancel_sub` first."
+            return [False, "A different subscription type already exists. Use `.cancel_sub` first."]
 
         # -- monthly extension --
         if sub_type == "monthly":
@@ -69,7 +66,7 @@ class SubscriptionManager:
                 months=old_month+months
             )
             self.check_subscriptions()
-            return [True, "Monthly subscription extended."]
+            return [True, "Monthly subscription extended.", db.get_as_dict("subscriptions", server_id=server_id)[0]]
 
         # -- revshare update --
         if sub_type == "revshare":
@@ -79,18 +76,18 @@ class SubscriptionManager:
                 value=value
             )
             self.check_subscriptions()
-            return [True, "Revshare subscription updated."]
+            return [True, "Revshare subscription updated.", db.get_as_dict("subscriptions", server_id=server_id)[0]]
 
     # Cancel subscription + send to webhook
     def cancel_sub(self, server_id: int):
         db = self.db
         if not db.exists("subscriptions", server_id=server_id):
-            return "No subscription exists."
+            return [False, "No subscription exists."]
 
         sub = db.get_as_dict("subscriptions", server_id=server_id)[0]
 
         # Send webhook log
-        requests.post(WEBHOOK_URL, json={
+        requests.post(sub_WEBHOOK, json={
             "content": f"Subscription cancelled for server {server_id}\n```{sub}```"
         })
 
@@ -101,7 +98,7 @@ class SubscriptionManager:
         db.update("servers", "server_id", server_id, sub=0)
 
         self.check_subscriptions()
-        return "Subscription cancelled."
+        return [True, "Subscription cancelled."]
 
     # Monthly reset check (call daily or every restart)
     def check_subscriptions(self):
