@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import time
-
+import sys
 
 class DB:
     def __init__(self, path="data.db"):
@@ -75,6 +75,12 @@ PASSWORD = os.getenv("SQLITE_WEB_PASSWORD")
 DB_PATH = "data.db"
 
 PROCESS = None
+
+if sys.platform == "win32":
+    CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
+else:
+    CREATE_NO_WINDOW = None
+
 # class db_panel:
 def start_sqlite_web():
     global PROCESS
@@ -94,7 +100,7 @@ def start_sqlite_web():
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW
+        creationflags=CREATE_NO_WINDOW
     )
     # track()
 
