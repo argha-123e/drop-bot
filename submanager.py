@@ -2,7 +2,7 @@ import datetime
 import requests
 
 from utils.constants import *
-
+from utils.constants import OWO_PLANS
 
 class SubscriptionManager:
     def __init__(self, db, webhook_url):

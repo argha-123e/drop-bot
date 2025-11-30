@@ -277,17 +277,15 @@ async def on_msg_handler(self, message):
             if cmd == "test":
                 await message.reply(f"Command: {cmd}\nArgs: {args}")
             if cmd == "add_sub":
+                if len(args) > 3:
+                    arg3 = args[3]
+                else:
+                    arg3 = None
                 try:
-                    print(args)
-                    server_id = int(args[0])
-                    try:
-                        await add_sub(message, server_id or message.guild.id, args[1], args[2], args[3])
-                        setup_msg_count()
-                    except:
-                        await add_sub(message, server_id or message.guild.id, args[1], args[2], None)
-                        setup_msg_count()
+                    await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], arg3)
+                    setup_msg_count(self)
                 except Exception as e:
-                    await message.reply(f"error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
+                    await message.reply(f"lol error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
             if cmd == "cancel_sub":
                 await cancel_sub(message, int(args[0]))
             if cmd == "sql":
@@ -299,7 +297,7 @@ async def on_msg_handler(self, message):
 spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
 ################################################################################################################
-async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str| None = None):
+async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2):
     # dev only
     if msg.author.id != DEV_ID:
         return await msg.channel.send("Not allowed.")
@@ -324,10 +322,11 @@ async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str| Non
 
     # monthly
     months = int(arg1)
-    tier = int(arg2)
-    if tier not in submgm.OWO_PLANS:
+    tier = 1
+    if arg2:
+        tier = int(arg2)
+    if tier not in OWO_PLANS:
         return await msg.channel.send("Invalid tier.")
-
     result = SM.add_sub(server_id, "monthly", tier, months=months)
     if result[0]:
         requests.post(sub_WEBHOOK, json={
@@ -413,7 +412,7 @@ async def stats(interaction: discord.Interaction, server_id: str):
     # build embed
     embed = discord.Embed(title=f"📊 Giveaway Stats — {sid}", color=MAIN_COLOR)
     embed.add_field(name="Total drops", value=str(stats["total_drops"]), inline=True)
-    embed.add_field(name=f"Total {stats["prize_name"]} to pay out", value=f"{stats['total_prize']:,}", inline=True)
+    embed.add_field(name=f"Total {stats['prize_name']} to pay out", value=f"{stats['total_prize']:,}", inline=True)
     embed.add_field(name=f"Developer fee ({value})", value=f"{dev_fee} owo", inline=True)
     embed.add_field(name="Subscription status", value=f"**Created at:** {stats['dates'][0]}\n**Expiring at:** {stats['dates'][1]}", inline=True)
     # show last few winners (if any)
@@ -424,7 +423,7 @@ async def stats(interaction: discord.Interaction, server_id: str):
             time_str = h.get("time")
             winners = ", ".join(h.get("winners", []))
             prize = f"{h.get('prize', 0):,}"
-            hist_lines.append(f"{time_str} — {winners} — {prize} {stats["prize_name"]}")
+            hist_lines.append(f"{time_str} — {winners} — {prize} {stats['prize_name']}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)

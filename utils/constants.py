@@ -17,13 +17,13 @@ load_dotenv()
 TOKEN: str = getenv("TOKEN")
 
 # owo plans
-PLAN_OWO: dict = {
+OWO_PLANS: dict = {
     100: 750_000,
     250: 1_000_000,
     500: 2_500_000,
     1000: 4_000_000,
-    5000: 7_000_000,
-    10000: 10_000_000,
+    5000: 6_000_000,
+    10000: 9_000_000,
 }
 
 # discord msg char limit
