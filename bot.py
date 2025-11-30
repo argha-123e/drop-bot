@@ -377,7 +377,6 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
 @client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
 @app_commands.describe(server_id="Optional server id")
 async def stats(interaction: discord.Interaction, server_id: str = None):
-    print(f"'{server_id}'")
 
     if server_id:
         sid = int(server_id)
@@ -394,8 +393,10 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
         if interaction.guild_id != sid or interaction.user.id != interaction.guild.owner_id:
             await interaction.response.send_message("❌ Only the server owner (or dev) can view these stats.", ephemeral=True)
             return
-
-    stats = get_server_stats(sid)
+    try:
+        stats = get_server_stats(sid)
+    except Exception as e:
+        print(e)
     if not stats:
         await interaction.response.send_message("No drops recorded for this server.", ephemeral=True)
         return
