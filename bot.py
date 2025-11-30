@@ -376,7 +376,7 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
 # /stats command
 @client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
 @app_commands.describe(server_id="Optional server id")
-async def stats(interaction: discord.Interaction, server_id: str):
+async def stats(interaction: discord.Interaction, server_id: str = None):
 
     sid = int(server_id) or interaction.guild_id
     if sid not in db.get_server_ids():

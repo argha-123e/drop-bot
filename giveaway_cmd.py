@@ -21,14 +21,14 @@ def update_drop_data(db, server_id: int, PRIZE: int, winner_ids: list):
     if total_drops == 0:
         total_drops = len(drops)
 
-    total_owo:int = server["total_owo"]
-    if total_owo == 0:
+    total_prize:int = server["total_prize"]
+    if total_prize == 0:
         for drop in drops:
-            total_owo += drop["prize"]
+            total_prize += drop["prize"]
     # increment totals
     total_drops += 1
 
-    total_owo += PRIZE
+    total_prize += PRIZE
 
     db.insert(
         table="drops",server_id=server_id , winner=winner_ids[0], prize=PRIZE, 
@@ -36,7 +36,7 @@ def update_drop_data(db, server_id: int, PRIZE: int, winner_ids: list):
         )
     db.update(
         table="servers", pk_name="server_id", pk_value=server_id, 
-        total_drops=total_drops, total_owo=total_owo
+        total_drops=total_drops, total_prize=total_prize
     )
 
 async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop, pay_channel, prize_name):
@@ -150,10 +150,10 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             pass
 
         return True
-    except:
+    except asyncio.CancelledError:
         # handle external cancellation cleanly
         try:
-            await channel.send("Giveaway cancelled (admin).")
+            await channel.send("(error) Giveaway cancelled. report in support server")
         except:
             pass
         raise
