@@ -27,16 +27,16 @@ SM = submgm.SubscriptionManager(db, sub_WEBHOOK)
 
 db.cur.execute('''
     CREATE TABLE IF NOT EXISTS servers (
-        server_id INTEGER PRIMARY KEY,
-        channel INTEGER NOT NULL,
-        pay_channel INTEGER NOT NULL,
-        msg_needed INTEGER NOT NULL,
-        prize INTEGER NOT NULL,
+        server_id    INTEGER PRIMARY KEY,
+        channel      INTEGER NOT NULL,
+        pay_channel  INTEGER NOT NULL,
+        msg_needed   INTEGER NOT NULL,
+        prize        INTEGER NOT NULL,
         gwy_duration FLOAT NOT NULL,
-        msg_count INTEGER NOT NULL,
-        total_drops INTEGER,
-        total_prize INTEGER,
-        sub BOOLEAN NOT NULL,
+        msg_count    INTEGER NOT NULL,
+        total_drops  INTEGER,
+        total_prize  INTEGER,
+        sub          BOOLEAN NOT NULL,
         prize_name
         )''')
 
@@ -107,28 +107,27 @@ def get_server_stats(sid: int):
         elif sub_data["sub_type"] == "revshare":
             dev_fee = int(total_prize * sub_data["value"])
 
-            dates = [sub_data["created_at"], sub_data["end_date"]]
+        dates = [sub_data["created_at"], sub_data["end_date"]]
 
-            # getting server specific drop data
-            drops = db.get_as_dict(table="drops", server_id=sid, remark="entry")
+        # getting server specific drop data
+        drops = db.get_as_dict(table="drops", server_id=sid, remark="entry")
             
-            history = drops
-            return {
-            "total_drops": total_drops,
-            "total_prize": total_prize,
-            "dev_fee": dev_fee,
-            "dates": dates,
-            "value": sub_data["value"],
-            "history": history,
-            "prize_name": servers_data["prize_name"]
-        }
+        history = drops
+        return {
+        "total_drops": total_drops,
+        "total_prize": total_prize,
+        "dev_fee": dev_fee,
+        "dates": dates,
+        "value": sub_data["value"],
+        "history": history,
+        "prize_name": servers_data["prize_name"]
+    }
     else:
         # getting server specific drop data
         drops = db.get_as_dict(table="drops", server_id=sid, remark="entry")
         
         history = drops
         dev_fee="not a subscriber now"
-        total_needed = total_prize
         return {
             "total_drops": total_drops,
             "total_prize": total_prize,
@@ -219,7 +218,7 @@ class MyClient(commands.Bot):
             # logic
             if not server["sub"]:
                 return
-            self.msg_count[sid] += 1
+            # self.msg_count[sid] += 1
             print(CYAN+f"[{self.get_guild(message.guild.id).name}] Count: {self.msg_count[sid]}/{msg_needed}"+RESET)
 
             if self.msg_count[sid] >= msg_needed:
@@ -426,9 +425,9 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
         hist_lines = []
         for h in history[::-1]:
             time_str = h.get("time")
-            winners = ", ".join(h.get("winners", []))
+            winners = h['winner']
             prize = f"{h.get('prize', 0):,}"
-            hist_lines.append(f"{time_str} — {winners} — {prize} {stats['prize_name']}")
+            hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
