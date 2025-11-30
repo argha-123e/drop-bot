@@ -36,31 +36,35 @@ db.cur.execute('''
         msg_count INTEGER NOT NULL,
         total_drops INTEGER,
         total_owo INTEGER,
-        sub BOOLEAN NOT NULL)''')
+        sub BOOLEAN NOT NULL,
+        prize_name)''')
 
 db.cur.execute("PRAGMA foreign_keys = ON;")
 
-db.cur.execute('''
-    CREATE TABLE IF NOT EXISTS drops (
-        drop_id     INTEGER PRIMARY KEY,
-        server_id   INTEGER NOT NULL,
-        winner      INTEGER,
-        prize       INTEGER NOT NULL,
-        time        TEXT NOT NULL,
-        remark      TEXT,
-        FOREIGN KEY (server_id) REFERENCES servers(server_id)
-);''')
 
 db.cur.execute("""
     CREATE TABLE IF NOT EXISTS subscriptions (
         server_id   INTEGER PRIMARY KEY,
         sub_type    TEXT NOT NULL,      -- "monthly" or "revshare"
         value       INTEGER NOT NULL,   -- %, or monthly price tier
-        end_date    TEXT,               -- only for monthly plans (ISO format)
+        end_date    TEXT NOT NULL,      -- only for monthly plans (ISO format)
         created_at  TEXT NOT NULL,
         months      INTEGER,
         FOREIGN KEY (server_id) REFERENCES servers(server_id)
     );""")
+
+#
+db.cur.execute('''
+    CREATE TABLE IF NOT EXISTS drops (
+        drop_id     INTEGER PRIMARY KEY,
+        server_id   INTEGER NOT NULL,
+        winner      INTEGER NOT NULL,
+        prize       INTEGER NOT NULL,
+        time        TEXT NOT NULL,
+        remark      TEXT,
+        FOREIGN KEY (server_id) REFERENCES servers(server_id)
+);''')
+
 
 if not db.exists(table="servers", server_id=1437310569387655249):
     db.insert(
@@ -228,7 +232,7 @@ class MyClient(commands.Bot):
                     self.start_giveaway_helper(
                         self.get_channel(server["channel"]), 1, 
                         server["gwy_duration"], prize, True, 
-                        self.get_channel(server["pay_channel"])
+                        self.get_channel(server["pay_channel"]), server["prize_name"]
                         )
                         )
                 self._gwy_tasks.append(task)          # track so you can cancel/inspect
@@ -367,8 +371,8 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
         f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each",
         ephemeral=True
         )
-    await client.start_giveaway(interaction.channel, winners, minutes, prize, False, None)
-
+    await client.start_giveaway(interaction.channel, winners, minutes, prize, False, None, None)
+    #  async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop, pay_channel, prize_name):
 
 # /stats command
 @client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
