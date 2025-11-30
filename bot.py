@@ -35,14 +35,14 @@ db.cur.execute('''
         gwy_duration FLOAT NOT NULL,
         msg_count INTEGER NOT NULL,
         total_drops INTEGER,
-        total_owo INTEGER,
+        total_prize INTEGER,
         sub BOOLEAN NOT NULL,
         prize_name
         )''')
 
 db.cur.execute("PRAGMA foreign_keys = ON;")
 
-
+# total_prize
 db.cur.execute('''
     CREATE TABLE IF NOT EXISTS drops (
         drop_id     INTEGER PRIMARY KEY,
@@ -67,13 +67,11 @@ db.cur.execute("""
     );""")
 
 
-
-
 if not db.exists(table="servers", server_id=1437310569387655249):
     db.insert(
         "servers", server_id =1437310569387655249, # insert a row in a table
         channel=1443974858445819955, pay_channel=1443974900929790072, msg_needed=5, 
-        prize=15000, gwy_duration=.25, msg_count=0, total_drops=0, total_owo=0, sub=1, prize_name="OWO"
+        prize=15000, gwy_duration=.25, msg_count=0, total_drops=0, total_prize=0, sub=1, prize_name="OWO"
         )
 
 
@@ -87,7 +85,7 @@ def backup_and_reset_server(sid: str):
     for drop in drops:
         db.update(table="drops", pk_name="drop_id", pk_value=drop["drop_id"], remark="backup")
 
-    db.update(table="servers", pk_name="server_id", pk_value=sid, total_owo=0, total_drops=0)
+    db.update(table="servers", pk_name="server_id", pk_value=sid, total_prize=0, total_drops=0)
     return True
 
 def get_server_stats(sid: int):
@@ -99,18 +97,15 @@ def get_server_stats(sid: int):
 
     # extracting data
     total_drops = servers_data["total_drops"]
-    total_owo = servers_data["total_owo"]
+    total_prize = servers_data["total_prize"]
     if db.exists("subscriptions",server_id=sid):
         sub_data = db.get_as_dict("subscriptions", server_id=sid)[0]
 
         if sub_data["sub_type"] == "monthly":
-            dev_fee = PLAN_OWO[sub_data["value"]]
+            dev_fee = OWO_PLANS[sub_data["value"]]
 
         elif sub_data["sub_type"] == "revshare":
-            dev_fee = int(total_owo * sub_data["value"])
-
-            # total owo needed 
-            total_needed = total_owo + dev_fee
+            dev_fee = int(total_prize * sub_data["value"])
 
             dates = [sub_data["created_at"], sub_data["end_date"]]
 
@@ -120,7 +115,7 @@ def get_server_stats(sid: int):
             history = drops
             return {
             "total_drops": total_drops,
-            "total_owo": total_owo,
+            "total_prize": total_prize,
             "dev_fee": dev_fee,
             "dates": dates,
             "value": sub_data["value"],
@@ -133,10 +128,10 @@ def get_server_stats(sid: int):
         
         history = drops
         dev_fee="not a subscriber now"
-        total_needed = total_owo
+        total_needed = total_prize
         return {
             "total_drops": total_drops,
-            "total_owo": total_owo,
+            "total_prize": total_prize,
             "dev_fee": dev_fee,
             "dates": ["N/A","N/A"],
             "value": "N/A",
@@ -328,7 +323,7 @@ async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str| Non
     # monthly
     months = int(arg1)
     tier = int(arg2)
-    if tier not in submgm.PLAN_OWO:
+    if tier not in submgm.OWO_PLANS:
         return await msg.channel.send("Invalid tier.")
 
     result = SM.add_sub(server_id, "monthly", tier, months=months)
@@ -338,7 +333,7 @@ async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str| Non
         })
         return await msg.channel.send(
             f"Monthly subscription added:\nServer: `{server_id}`\n"
-            f"Months: `{months}`\nTier: `{tier}` → {submgm.PLAN_OWO[tier]:,} OWO/mo\nreturn code: {result[1]}"
+            f"Months: `{months}`\nTier: `{tier}` → {submgm.OWO_PLANS[tier]:,} OWO/mo\nreturn code: {result[1]}"
         )
 
 
@@ -416,7 +411,7 @@ async def stats(interaction: discord.Interaction, server_id: str):
     # build embed
     embed = discord.Embed(title=f"📊 Giveaway Stats — {sid}", color=MAIN_COLOR)
     embed.add_field(name="Total drops", value=str(stats["total_drops"]), inline=True)
-    embed.add_field(name=f"Total {stats["prize_name"]} to pay out", value=f"{stats['total_owo']:,}", inline=True)
+    embed.add_field(name=f"Total {stats["prize_name"]} to pay out", value=f"{stats['total_prize']:,}", inline=True)
     embed.add_field(name=f"Developer fee ({value})", value=f"{dev_fee} owo", inline=True)
     embed.add_field(name="Subscription status", value=f"**Created at:** {stats['dates'][0]}\n**Expiring at:** {stats['dates'][1]}", inline=True)
     # show last few winners (if any)
@@ -427,7 +422,7 @@ async def stats(interaction: discord.Interaction, server_id: str):
             time_str = h.get("time")
             winners = ", ".join(h.get("winners", []))
             prize = f"{h.get('prize', 0):,}"
-            hist_lines.append(f"{time_str} — {winners} — {prize} OWO")
+            hist_lines.append(f"{time_str} — {winners} — {prize} {stats["prize_name"]}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
