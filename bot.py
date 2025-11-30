@@ -122,10 +122,10 @@ def get_server_stats(sid: int):
             "total_drops": total_drops,
             "total_owo": total_owo,
             "dev_fee": dev_fee,
-            "total_needed": total_needed,
             "dates": dates,
             "value": sub_data["value"],
-            "history": history
+            "history": history,
+            "prize_name": servers_data["prize_name"]
         }
     else:
         # getting server specific drop data
@@ -138,10 +138,10 @@ def get_server_stats(sid: int):
             "total_drops": total_drops,
             "total_owo": total_owo,
             "dev_fee": dev_fee,
-            "total_needed": total_needed,
             "dates": ["N/A","N/A"],
             "value": "N/A",
-            "history": history
+            "history": history,
+            "prize_name": servers_data["prize_name"]
         }
 
 async def msg_count_saver(self):
@@ -411,13 +411,13 @@ async def stats(interaction: discord.Interaction, server_id: str):
         dev_fee = f"{stats['dev_fee']:,}"
     else:
         dev_fee = stats["dev_fee"]
+    
 
     # build embed
     embed = discord.Embed(title=f"📊 Giveaway Stats — {sid}", color=MAIN_COLOR)
     embed.add_field(name="Total drops", value=str(stats["total_drops"]), inline=True)
-    embed.add_field(name="Total OWO paid out", value=f"{stats['total_owo']:,}", inline=True)
-    embed.add_field(name=f"Developer fee ({value})", value=f"{dev_fee}", inline=True)
-    embed.add_field(name="Total OWO needed", value=f"{stats['total_needed']:,}", inline=True)
+    embed.add_field(name=f"Total {stats["prize_name"]} to pay out", value=f"{stats['total_owo']:,}", inline=True)
+    embed.add_field(name=f"Developer fee ({value})", value=f"{dev_fee} owo", inline=True)
     embed.add_field(name="Subscription status", value=f"**Created at:** {stats['dates'][0]}\n**Expiring at:** {stats['dates'][1]}", inline=True)
     # show last few winners (if any)
     history = stats.get("history", [])[-6:]  # last 6 entries
