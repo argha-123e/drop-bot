@@ -53,7 +53,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
             color=MAIN_COLOR
         )
-        embed.set_footer(text=f"Picking winner in {giveaway_duration} minutes!")
+        embed.set_footer(text=f"made with 💖")
         msg = await channel.send(embed=embed)
 
         # add reaction to gwy msg so ppls can react on it to join
@@ -119,6 +119,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             description=f"congratulations you have won **{prize}** <a:confetti:1438155456823431343>",
             color=SUCCESS_COLOR
         )
+        result_embed.set_footer(text=f"made with 💖")
         
         if giveaway_msg:
             try:
@@ -142,6 +143,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             description=f"Participant(s): {len(users)}!\n{winner_mention} won **{prize}**",
             color=SUCCESS_COLOR
         )
+        result_embed_edit.set_footer(text=f"made with 💖")
         try:
             await msg.edit(embed=result_embed_edit)
         except:
