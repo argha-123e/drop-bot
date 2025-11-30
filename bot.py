@@ -278,11 +278,12 @@ async def on_msg_handler(self, message):
                 await message.reply(f"Command: {cmd}\nArgs: {args}")
             if cmd == "add_sub":
                 try:
+                    server_id = int(args[0])
                     try:
-                        await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], args[3])
+                        await add_sub(message, server_id or message.guild.id, args[1], args[2], args[3])
                         setup_msg_count()
                     except:
-                        await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], None)
+                        await add_sub(message, server_id or message.guild.id, args[1], args[2], None)
                         setup_msg_count()
                 except Exception as e:
                     await message.reply(f"error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
