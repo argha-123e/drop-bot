@@ -39,13 +39,13 @@ def update_drop_data(db, server_id: int, PRIZE: int, winner_ids: list):
         total_drops=total_drops, total_owo=total_owo
     )
 
-async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop, pay_channel):
+async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop, pay_channel, prize_name):
     self.gwy_running = len(self._gwy_tasks)
     try:
         if isinstance(PRIZE, str):
             prize = PRIZE
         elif type(PRIZE) == int:
-            prize = f"{PRIZE:,} OWO"
+            prize = f"{PRIZE:,} {prize_name}"
 
         end_time = int(time.time()) + (int(giveaway_duration * 60))
         embed = discord.Embed(
@@ -150,7 +150,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             pass
 
         return True
-    except asyncio.CancelledError:
+    except:
         # handle external cancellation cleanly
         try:
             await channel.send("Giveaway cancelled (admin).")
