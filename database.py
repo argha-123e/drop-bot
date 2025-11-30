@@ -113,7 +113,7 @@ def start_sqlite_web():
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             )
-        domain = "fi8.bot-hosting.net"
+    domain = "fi8.bot-hosting.net"
 
     print(BLUE+f"[DB PANEL] Running on http://{domain}:{PORT}"+RESET)
     # print(f"[DB PANEL] Password: {PASSWORD}")

@@ -37,28 +37,17 @@ db.cur.execute('''
         total_drops INTEGER,
         total_owo INTEGER,
         sub BOOLEAN NOT NULL,
-        prize_name)''')
+        prize_name
+        )''')
 
 db.cur.execute("PRAGMA foreign_keys = ON;")
 
 
-db.cur.execute("""
-    CREATE TABLE IF NOT EXISTS subscriptions (
-        server_id   INTEGER PRIMARY KEY,
-        sub_type    TEXT NOT NULL,      -- "monthly" or "revshare"
-        value       INTEGER NOT NULL,   -- %, or monthly price tier
-        end_date    TEXT NOT NULL,      -- only for monthly plans (ISO format)
-        created_at  TEXT NOT NULL,
-        months      INTEGER,
-        FOREIGN KEY (server_id) REFERENCES servers(server_id)
-    );""")
-
-#
 db.cur.execute('''
     CREATE TABLE IF NOT EXISTS drops (
         drop_id     INTEGER PRIMARY KEY,
         server_id   INTEGER NOT NULL,
-        winner      INTEGER NOT NULL,
+        winner      INTEGER,
         prize       INTEGER NOT NULL,
         time        TEXT NOT NULL,
         remark      TEXT,
@@ -66,11 +55,25 @@ db.cur.execute('''
 );''')
 
 
+db.cur.execute("""
+    CREATE TABLE IF NOT EXISTS subscriptions (
+        server_id   INTEGER PRIMARY KEY,
+        sub_type    TEXT NOT NULL,      -- "monthly" or "revshare"
+        value       INTEGER NOT NULL,   -- %, or monthly price tier
+        end_date    TEXT,               -- only for monthly plans (ISO format)
+        created_at  TEXT NOT NULL,
+        months      INTEGER,
+        FOREIGN KEY (server_id) REFERENCES servers(server_id)
+    );""")
+
+
+
+
 if not db.exists(table="servers", server_id=1437310569387655249):
     db.insert(
         "servers", server_id =1437310569387655249, # insert a row in a table
         channel=1443974858445819955, pay_channel=1443974900929790072, msg_needed=5, 
-        prize=15000, gwy_duration=.25, msg_count=0, total_drops=0, total_owo=0, sub=1
+        prize=15000, gwy_duration=.25, msg_count=0, total_drops=0, total_owo=0, sub=1, prize_name="OWO"
         )
 
 
@@ -285,9 +288,9 @@ async def on_msg_handler(self, message):
                         setup_msg_count()
                     except:
                         await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], None)
-                        setup_msg_count
-                except:
-                    await message.reply(f"wrong syntax\ntry: ``.addsub <server id> <plan type> <months> <tier>``")
+                        setup_msg_count()
+                except Exception as e:
+                    await message.reply(f"error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
             if cmd == "cancel_sub":
                 await cancel_sub(message, int(args[0]))
             if cmd == "sql":
@@ -299,7 +302,7 @@ async def on_msg_handler(self, message):
 spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
 ################################################################################################################
-async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str = None):
+async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2: str| None = None):
     # dev only
     if msg.author.id != DEV_ID:
         return await msg.channel.send("Not allowed.")
