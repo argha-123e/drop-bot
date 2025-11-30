@@ -218,7 +218,7 @@ class MyClient(commands.Bot):
             # logic
             if not server["sub"]:
                 return
-            # self.msg_count[sid] += 1
+            self.msg_count[sid] += 1
             print(CYAN+f"[{self.get_guild(message.guild.id).name}] Count: {self.msg_count[sid]}/{msg_needed}"+RESET)
 
             if self.msg_count[sid] >= msg_needed:
