@@ -28,6 +28,13 @@ class SubscriptionManager:
             end_date = None
             if sub_type == "monthly":
                 end_date = (datetime.datetime.utcnow() + datetime.timedelta(days=30 * months)).isoformat()
+            elif sub_type == "trial":
+                end_date = (datetime.datetime.utcnow() + datetime.timedelta(value)).isoformat() # value used as days
+                trials_data = db.get_as_dict("trials", server_id=server_id)
+                print("here after getting data")
+                if trials_data:
+                    if trials_data["trial"]:
+                        return [False, "this server has/had trial before"]
 
             db.insert(
                 "subscriptions",
@@ -122,7 +129,7 @@ class SubscriptionManager:
 
             active = True
 
-            if sub_type == "monthly":
+            if sub_type == "monthly" or sub_type == "trial":
                 if end_date is None:
                     active = False
                 else:

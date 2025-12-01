@@ -66,6 +66,12 @@ db.cur.execute("""
         FOREIGN KEY (server_id) REFERENCES servers(server_id)
     );""")
 
+db.cur.execute("""
+    CREATE TABLE IF NOT EXISTS trials (
+        server_id   INTEGER PRIMARY KEY,
+        trial       BOOLEAN,
+        FOREIGN KEY (server_id) REFERENCES subscriptions(server_id)
+    );""")
 
 if not db.exists(table="servers", server_id=1437310569387655249):
     db.insert(
@@ -285,6 +291,7 @@ async def on_msg_handler(self, message):
                     setup_msg_count(self)
                 except Exception as e:
                     await message.reply(f"lol error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
+
             if cmd == "cancel_sub":
                 await cancel_sub(message, int(args[0]))
             if cmd == "sql":
@@ -316,7 +323,19 @@ async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2):
                 )
         else:
             return await msg.channel.send(f"return code: {result[1]}")
-
+    
+    elif plan_type == "trial":
+        days = int(arg1)
+        result = SM.add_sub(server_id, "trial", days)
+        if result[0]:
+            requests.post(sub_WEBHOOK, json={
+            "content": f"{spacer}\ntrial added for server {server_id}\n## current server sub info\n```{result[2]}```"
+            })
+            return await msg.channel.send(
+                f"trial added for server `{server_id}` @ {0}%\nreturn code: {result[1]}"
+                )
+        else:
+            return await msg.channel.send(f"return code: {result[1]}")
 
 
     # monthly
@@ -346,6 +365,28 @@ async def cancel_sub(msg, server_id: int):
     else:
         await msg.channel.send(f"return code: {result[1]}")
 
+async def add_trial(msg, server_id: int, days: str):
+    # dev only
+    if msg.author.id != DEV_ID:
+        return await msg.channel.send("Not allowed.")
+    if server_id not in client.SERVER_IDs:
+        return await msg.channel.send("server not in ``servers`` table")
+    
+    days = int(days)
+
+
+    result = SM.add_sub(server_id, "trial", days)
+    if result[0]:
+        requests.post(sub_WEBHOOK, json={
+        "content": f"{spacer}\ntrial added for server {server_id}\n## current server sub info\n```{result[2]}```"
+        })
+        return await msg.channel.send(
+            f"trial added for server `{server_id}` @ {0}%\nreturn code: {result[1]}"
+            )
+    else:
+        return await msg.channel.send(f"return code: {result[1]}")
+
+# .sql insert into servers (server_id, channel, pay_channel, msg_needed, prize, gwy_duration, msg_count, total_drops, total_prize, sub, prize_name) values (1252227471101788211, 1252233051443036244, 1252948190815191050, 100, 10000, 0.30, 0, 0, 0, 0, 'OWO')
 # slash cmds
 #########################################################################################################################
 
