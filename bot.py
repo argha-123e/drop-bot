@@ -70,7 +70,7 @@ db.cur.execute("""
     CREATE TABLE IF NOT EXISTS trials (
         server_id   INTEGER PRIMARY KEY,
         trial       BOOLEAN,
-        FOREIGN KEY (server_id) REFERENCES subscriptions(server_id)
+        FOREIGN KEY (server_id) REFERENCES servers(server_id)
     );""")
 
 if not db.exists(table="servers", server_id=1437310569387655249):
@@ -284,8 +284,8 @@ async def on_msg_handler(self, message):
             args = parts[1:]       # list of arguments
 
             # Example command: ,test hello world
-            if cmd == "test":
-                await message.reply(f"Command: {cmd}\nArgs: {args}")
+            if cmd == "ping":
+                await message.reply(f"Pong! `{round(self.latency * 1000)}ms`")
             if cmd == "add_sub":
                 if len(args) > 3:
                     arg3 = args[3]
@@ -295,7 +295,7 @@ async def on_msg_handler(self, message):
                     await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], arg3)
                     setup_msg_count(self)
                 except Exception as e:
-                    await message.reply(f"lol error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
+                    await message.reply(f"error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
 
             if cmd == "cancel_sub":
                 await cancel_sub(message, int(args[0]))
@@ -310,7 +310,7 @@ spacer = "----------------------------------------------------------------------
 ################################################################################################################
 async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2):
     # dev only
-    if msg.author.id != DEV_ID:
+    if msg.author.id not in owner_ids:
         return await msg.channel.send("Not allowed.")
     if server_id not in client.SERVER_IDs:
         return await msg.channel.send("server not in ``servers`` table")
@@ -362,7 +362,7 @@ async def add_sub(msg, server_id: int, plan_type: str, arg1: str, arg2):
 
 
 async def cancel_sub(msg, server_id: int):
-    if msg.author.id != DEV_ID:
+    if msg.author.id not in owner_ids:
         return
     result = SM.cancel_sub(server_id)
     if result[0]:
@@ -372,7 +372,7 @@ async def cancel_sub(msg, server_id: int):
 
 async def add_trial(msg, server_id: int, days: str):
     # dev only
-    if msg.author.id != DEV_ID:
+    if msg.author.id not in owner_ids:
         return await msg.channel.send("Not allowed.")
     if server_id not in client.SERVER_IDs:
         return await msg.channel.send("server not in ``servers`` table")
@@ -399,11 +399,11 @@ async def add_trial(msg, server_id: int, days: str):
 @client.tree.command(name="drop", description="send a quick drop to currrent channel.")
 async def drop(interaction: discord.Interaction, minutes: float, prize: str, winners: int):
 
-    if client.gwy_running > gwy_limit: # hard limit 100 gwys
+    if client.gwy_running > gwy_limit and interaction.user.id not in allowed_users: # hard limit 100 gwys
         await interaction.response.send_message("shard is too busy, try again later",ephemeral=True)
         return
     
-    if minutes > gwy_time_limit: # hard cap of 60 minutes
+    if minutes > gwy_time_limit and interaction.user.id not in allowed_users: # hard cap of 60 minutes
         await interaction.response.send_message("try drops under 1hrs (60 minutes)",ephemeral=True)
         return
     
@@ -432,8 +432,8 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
         return
     
 
-    # permission: server owner or dev
-    if interaction.user.id != DEV_ID:
+    # permission: server owner or bot owner
+    if interaction.user.id not in owner_ids:
         # must be querying current server and be owner
         if interaction.guild_id != sid or interaction.user.id != interaction.guild.owner_id:
             await interaction.response.send_message("❌ Only the server owner (or dev) can view these stats.", ephemeral=True)
@@ -482,7 +482,7 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
 @client.tree.command(name="reset_drops", description="(Dev only) Backup and reset drops data for a server")
 @app_commands.describe(server_id="Server ID to reset (defaults to current server)")
 async def reset_drops(interaction: discord.Interaction, server_id: str = None):
-    if interaction.user.id != DEV_ID:
+    if interaction.user.id not in owner_ids:
         await interaction.response.send_message("❌ Only the bot developer can run this.", ephemeral=True)
         return
     sid = server_id or str(interaction.guild_id)

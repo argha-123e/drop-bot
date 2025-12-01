@@ -6,7 +6,7 @@ import datetime as dt
 ##################################################################################################################
 async def sql_handler(self, message):
     import discord
-    if message.author.id != DEV_ID:
+    if message.author.id not in owner_ids:
         return
     db = self.db
 

@@ -34,6 +34,12 @@ class SubscriptionManager:
                 if trials_data:
                     if trials_data["trial"]:
                         return [False, "this server has/had trial before"]
+                else:
+                    db.insert(
+                        "trials",
+                        server_id=server_id,
+                        trial=1
+                        )
 
             db.insert(
                 "subscriptions",
@@ -44,6 +50,7 @@ class SubscriptionManager:
                 created_at=now,
                 months=months
             )
+            
             self.check_subscriptions()
             return [True, "Subscription added.", db.get_as_dict("subscriptions", server_id=server_id)[0]]
 

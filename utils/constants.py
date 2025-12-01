@@ -2,8 +2,22 @@ from dotenv import load_dotenv
 from os import getenv
 from colorama import Fore
 
+# owners
+owner_ids = [
+    1206904635420450856
+]
+
 # dev id
-DEV_ID:int = 1206904635420450856
+DEV_ID:int = [
+    1206904635420450856
+]
+
+# allowed users
+allowed_users = [
+    1315914791851655229,
+    1310835757715423284,
+    1315914791851655229
+]
 
 
 # Embed Colors
