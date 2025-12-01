@@ -109,9 +109,11 @@ def get_server_stats(sid: int):
 
         if sub_data["sub_type"] == "monthly":
             dev_fee = OWO_PLANS[sub_data["value"]]
-
         elif sub_data["sub_type"] == "revshare":
             dev_fee = int(total_prize * sub_data["value"])
+        elif sub_data["sub_type"] == "trial":
+            dev_fee = 0
+            sub_data["value"] = "trial"
 
         dates = [sub_data["created_at"], sub_data["end_date"]]
 
