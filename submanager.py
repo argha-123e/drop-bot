@@ -31,7 +31,6 @@ class SubscriptionManager:
             elif sub_type == "trial":
                 end_date = (datetime.datetime.utcnow() + datetime.timedelta(value)).isoformat() # value used as days
                 trials_data = db.get_as_dict("trials", server_id=server_id)
-                print("here after getting data")
                 if trials_data:
                     if trials_data["trial"]:
                         return [False, "this server has/had trial before"]

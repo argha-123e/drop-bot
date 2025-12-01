@@ -242,7 +242,10 @@ class MyClient(commands.Bot):
                 self.gwy_running = len(self._gwy_tasks)
             
     async def start_giveaway_helper(self, *args, **kwargs):
-        return await start_giveaway(self, *args, **kwargs)
+        try:
+            await start_giveaway(self, *args, **kwargs)
+        except Exception as e:
+            print(e)
 
 def get_data():
         data = db.get_as_dict("servers")
