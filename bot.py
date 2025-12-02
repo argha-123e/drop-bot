@@ -507,7 +507,7 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
             prize = f"{h.get('prize', 0):,}"
             hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
         while hist_lines:
-            interaction.user.send("\n".join(hist_lines[:30]))
+            await interaction.user.send("\n".join(hist_lines[:30]))
             del hist_lines[:30]
             
     
