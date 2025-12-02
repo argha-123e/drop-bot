@@ -251,6 +251,32 @@ class MyClient(commands.Bot):
         except Exception as e:
             print(e)
 
+
+# button class
+###################################################################################################################
+
+class Button(discord.ui.Button):
+    def __init__(self, *, style = discord.ButtonStyle.secondary, label = None, disabled = False, custom_id = None, url = None, emoji = None, row = None, sku_id = None, id = None, _callback):
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row, sku_id=sku_id, id=id)
+        self.callback = _callback
+
+
+    async def drop_history(self, interaction):
+        await interaction.response.defer(ephemeral= False, thinking= False)
+        history = stats.get("history", [])
+        hist_lines = []
+        for h in history[::-1]:
+            time_str = h.get("time")
+            winners = h['winner']
+            prize = f"{h.get('prize', 0):,}"
+            hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
+        while hist_lines:
+            await interaction.user.send("\n".join(hist_lines[:30]))
+            del hist_lines[:30]
+        self.disabled = True
+        await interaction.response.edit_message(content="dmed every drop", view=None)
+
+
 # starter
 ###################################################################################################################
 def get_data():
@@ -494,27 +520,9 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
             hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
-    button = discord.ui.Button(label="get dmed every drop", style=discord.ButtonStyle.green, emoji="⬇️")
+    button = Button(label="get dmed every drop", style=discord.ButtonStyle.grey, emoji="⬇️", _callback=button.drop_history)
 
-    async def callback(interaction):
-        await interaction.response.defer(ephemeral= False, thinking= False)
-        history = stats.get("history", [])
-        hist_lines = []
-        chunks = []
-        for h in history[::-1]:
-            time_str = h.get("time")
-            winners = h['winner']
-            prize = f"{h.get('prize', 0):,}"
-            hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
-        while hist_lines:
-            await interaction.user.send("\n".join(hist_lines[:30]))
-            del hist_lines[:30]
-            
-    
-    button.callback = callback
-
-    view = discord.ui.View()
-    view.add_item(button)
+    view = discord.ui.View().add_item(button)
     await interaction.response.send_message(embed=embed, ephemeral=True, view=view)
 
 
