@@ -449,7 +449,6 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
     if sid not in db.get_server_ids():
         await interaction.response.send_message("❌ Server not found.", ephemeral=True)
         return
-    
 
     # permission: server owner or bot owner
     if interaction.user.id not in owner_ids:
@@ -476,7 +475,7 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
         dev_fee = f"{stats['dev_fee']:,}"
     else:
         dev_fee = stats["dev_fee"]
-    
+
 
     # build embed
     embed = discord.Embed(title=f"📊 Giveaway Stats — {sid}", color=MAIN_COLOR)
@@ -495,7 +494,28 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
             hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    button = discord.ui.Button(label="get dmed every drop", style=discord.ButtonStyle.green, emoji="⬇️")
+
+    async def callback(interaction):
+        await interaction.response.defer(ephemeral= False, thinking= False)
+        history = stats.get("history", [])
+        hist_lines = []
+        chunks = []
+        for h in history[::-1]:
+            time_str = h.get("time")
+            winners = h['winner']
+            prize = f"{h.get('prize', 0):,}"
+            hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
+        while hist_lines:
+            interaction.user.send("\n".join(hist_lines[:30]))
+            del hist_lines[:30]
+            
+    
+    button.callback = callback
+
+    view = discord.ui.View()
+    view.add_item(button)
+    await interaction.response.send_message(embed=embed, ephemeral=True, view=view)
 
 
 # /reset command (dev only)
