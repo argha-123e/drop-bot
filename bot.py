@@ -258,7 +258,9 @@ class MyClient(commands.Bot):
 class Button(discord.ui.Button):
     def __init__(self, *, style = discord.ButtonStyle.secondary, label = None, disabled = False, custom_id = None, url = None, emoji = None, row = None, sku_id = None, id = None, _callback):
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row, sku_id=sku_id, id=id)
-        self.callback = _callback
+        
+        if _callback == "drop_history":
+            self.callback = self.drop_history
 
 
     async def drop_history(self, interaction):
@@ -520,7 +522,7 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
             hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
-    button = Button(label="get dmed every drop", style=discord.ButtonStyle.grey, emoji="⬇️", _callback=button.drop_history)
+    button = Button(label="get dmed every drop", style=discord.ButtonStyle.grey, emoji="⬇️", _callback="drop_history")
 
     view = discord.ui.View().add_item(button)
     await interaction.response.send_message(embed=embed, ephemeral=True, view=view)
