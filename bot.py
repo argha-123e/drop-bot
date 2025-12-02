@@ -16,9 +16,12 @@ atexit.register(DB.stop_sqlite_web)
 # giveaway command
 from giveaway_cmd import start_giveaway
 
+
 # from /utils
-from utils.data_utils import *
-from utils.constants import *
+from utils.data_utils import * # functions related to data maniupulation
+backup_data()
+from utils.constants import * # constant variables
+import utils.embed as embed # embeds 
 
 # subscription manager
 import submanager as submgm
@@ -148,7 +151,6 @@ def get_server_stats(sid: int):
 
 async def msg_count_saver(self):
     cycled:int = 0
-    backup_data()
     while True:
         servers = db.get_as_dict("servers")
         for server_id in self.SERVER_IDs:
@@ -165,7 +167,7 @@ async def msg_count_saver(self):
             self.SERVER_IDs = db.get_server_ids()
             self.TARGET_CHANNEL_ID = db.get_channel_ids()
             SM.check_subscriptions()
-        elif cycled % 5 == 0:
+        elif cycled % 5 == 0 and is_server:
             backup_data()
         await asyncio.sleep(60)
         cycled += 1
@@ -182,7 +184,7 @@ def setup_msg_count(self):
 # BOT CLASS
 intents = discord.Intents.all()
 class MyClient(commands.Bot):
-    def __init__(self, DATA, SERVER_IDs, TARGET_CHANNEL_ID):
+    def __init__(self, SERVER_IDs, TARGET_CHANNEL_ID):
         super().__init__(command_prefix=PREFIX, intents=intents)
         self.db = db
 
@@ -249,24 +251,21 @@ class MyClient(commands.Bot):
         except Exception as e:
             print(e)
 
+# starter
+###################################################################################################################
 def get_data():
-        data = db.get_as_dict("servers")
-        channel_ids = []
-        server_ids = []
-        for servers in data:
-            server_ids.append(servers["server_id"]) # "server_id" (pk) from database
-            channel_ids.append(servers["channel"]) # getting "channel" from database
-            
-        return [data, server_ids, channel_ids]
+        channel_ids = db.get_channel_ids()
+        server_ids = db.get_server_ids()
+        return [server_ids, channel_ids]
 
 
 def start():
-    data = get_data()
+    data = True
     if data:
-        client = MyClient(data[0], data[1], data[2])
+        client = MyClient(db.get_channel_ids(), db.get_server_ids())
         return client
     else:
-        print(RED+"❌ No valid token found."+RESET)
+        print(RED+"❌ No valid data found."+RESET)
 
 
 client = start()
@@ -286,7 +285,18 @@ async def on_msg_handler(self, message):
             # Example command: ,test hello world
             if cmd == "ping":
                 await message.reply(f"Pong! `{round(self.latency * 1000)}ms`")
-            if cmd == "add_sub":
+            
+            elif cmd == "count":
+                if message.guild.id in self.SERVER_IDs:
+                    await message.reply(f"`{self.msg_count[str(message.guild.id)]}`")
+
+            elif cmd == "about":
+                await message.channel.send(embed=embed.about)
+
+            elif cmd == "help":
+                await message.channel.send(embed=embed.help)
+
+            elif cmd == "add_sub":
                 if len(args) > 3:
                     arg3 = args[3]
                 else:
@@ -295,11 +305,14 @@ async def on_msg_handler(self, message):
                     await add_sub(message, int(args[0]) or message.guild.id, args[1], args[2], arg3)
                     setup_msg_count(self)
                 except Exception as e:
-                    await message.reply(f"error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``")
+                    await message.reply(
+                    f"error: {e}\n(maybe) wrong syntax\ntry: ``.add_sub <server id> <plan type> <months> <tier>``"
+                        )
 
-            if cmd == "cancel_sub":
+            elif cmd == "cancel_sub":
                 await cancel_sub(message, int(args[0]))
-            if cmd == "sql":
+
+            elif cmd == "sql":
                 await sql_handler(self, message)
                 self.SERVER_IDs = db.get_server_ids()
                 self.TARGET_CHANNEL_ID = db.get_channel_ids()
@@ -391,9 +404,15 @@ async def add_trial(msg, server_id: int, days: str):
     else:
         return await msg.channel.send(f"return code: {result[1]}")
 
-# .sql insert into servers (server_id, channel, pay_channel, msg_needed, prize, gwy_duration, msg_count, total_drops, total_prize, sub, prize_name) values (1252227471101788211, 1252233051443036244, 1252948190815191050, 100, 10000, 0.30, 0, 0, 0, 0, 'OWO')
+
 # slash cmds
 #########################################################################################################################
+
+# /help command
+@client.tree.command(name="help", description="Show Drop Bot quick help")
+async def help_cmd(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=embed.help, ephemeral=True)
+
 
 # /drop command
 @client.tree.command(name="drop", description="send a quick drop to currrent channel.")
@@ -416,7 +435,7 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
         ephemeral=True
         )
     await client.start_giveaway(interaction.channel, winners, minutes, prize, False, None, None)
-    #  async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_chat_drop, pay_channel, prize_name):
+
 
 # /stats command
 @client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
@@ -477,6 +496,7 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 # /reset command (dev only)
 @client.tree.command(name="reset_drops", description="(Dev only) Backup and reset drops data for a server")

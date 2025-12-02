@@ -3,7 +3,8 @@ import subprocess
 import os
 from dotenv import load_dotenv
 load_dotenv()
-import time, sys
+import time
+from sys import platform
 from utils.constants import *
 
 
@@ -86,7 +87,7 @@ def start_sqlite_web():
         print(GREEN+"[DB PANEL] Already running"+RESET)
         return
     
-    if sys.platform == "win32":
+    if platform == "win32":
         PROCESS = subprocess.Popen(
             [
                 "python",

@@ -53,7 +53,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
             color=MAIN_COLOR
         )
-        embed.set_footer(text=f"made with 💖")
+        embed.set_footer(text=footer_txt)
         msg = await channel.send(embed=embed)
 
         # add reaction to gwy msg so ppls can react on it to join
@@ -76,6 +76,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
                     description=f"❌ No reactions. Giveaway canceled.",
                     color=ERROR_COLOR
                     )
+                result_embed_edit.set_footer(text=footer_txt)
                 await msg.edit(embed=result_embed_edit)
             except:
                 self.gwy_running -= 1
@@ -92,6 +93,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
                 title="Giveaway Ended! <a:confetti:1438155456823431343>",
                 description=f"❌ No valid users entered.",
                 color=ERROR_COLOR)
+                result_embed_edit.set_footer(text=footer_txt)
                 await msg.edit(embed=result_embed_edit)
             except:
                 pass
@@ -119,7 +121,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             description=f"congratulations you have won **{prize}** <a:confetti:1438155456823431343>",
             color=SUCCESS_COLOR
         )
-        result_embed.set_footer(text=f"made with 💖")
+        result_embed.set_footer(text=footer_txt)
         
         if giveaway_msg:
             try:
@@ -143,7 +145,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
             description=f"Participant(s): {len(users)}!\n{winner_mention} won **{prize}**",
             color=SUCCESS_COLOR
         )
-        result_embed_edit.set_footer(text=f"made with 💖")
+        result_embed_edit.set_footer(text=footer_txt)
         try:
             await msg.edit(embed=result_embed_edit)
         except:

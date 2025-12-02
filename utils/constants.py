@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from os import getenv
 from colorama import Fore
+from sys import platform
 
 # owners
 owner_ids = [
@@ -33,7 +34,7 @@ TOKEN: str = getenv("TOKEN")
 # owo plans
 OWO_PLANS: dict = {
     100: 500_000,
-    250: 1_250_000,
+    250: 1_000_000,
     500: 2_500_000,
     1000: 3_500_000,
     5000: 5_000_000,
@@ -66,3 +67,14 @@ BLUE = Fore.BLUE
 YELLOW = Fore.YELLOW
 CYAN = Fore.CYAN
 RESET = Fore.RESET
+
+
+
+# platform
+footer_txt = "Drop Bot • made with 💖"
+is_server = False
+if platform == "win32":
+    footer_txt = "Drop Bot • made with 💖 (pc)"
+else:
+    footer_txt = "Drop Bot • made with 💖"
+    is_server = True
