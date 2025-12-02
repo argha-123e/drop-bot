@@ -181,14 +181,6 @@ def setup_msg_count(self):
             if server["server_id"] == server_id:
                 self.msg_count[sid] = server["msg_count"]
 
-def setup_msg_count(self):
-    data = db.get_as_dict("servers")
-    for server_id in self.SERVER_IDs:
-        sid = str(server_id)
-        for server in data:
-            if server["server_id"] == server_id:
-                self.msg_count[sid] = server["msg_count"]
-
 # BOT CLASS
 intents = discord.Intents.all()
 class MyClient(commands.Bot):
@@ -236,7 +228,6 @@ class MyClient(commands.Bot):
             # logic
             if not server["sub"]:
                 return
-            print(self.msg_count)
             self.msg_count[sid] += 1
             print(CYAN+f"[{self.get_guild(message.guild.id).name}] Count: {self.msg_count[sid]}/{msg_needed}"+RESET)
 
