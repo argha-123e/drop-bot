@@ -256,18 +256,19 @@ class MyClient(commands.Bot):
 ###################################################################################################################
 
 class Button(discord.ui.Button):
-    def __init__(self, *, style = discord.ButtonStyle.secondary, label = None, disabled = False, custom_id = None, url = None, emoji = None, row = None, sku_id = None, id = None, _callback):
+    def __init__(self, *, style = discord.ButtonStyle.secondary, label = None, disabled = False, custom_id = None, url = None, emoji = None, row = None, sku_id = None, id = None, _callback, arg1 = None,):
         super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row, sku_id=sku_id, id=id)
         
         if _callback == "drop_history":
             self.callback = self.drop_history
 
+        self.arg1 = arg1
 
+        
     async def drop_history(self, interaction):
         await interaction.response.defer(ephemeral= False, thinking= False)
-        history = stats.get("history", [])
         hist_lines = []
-        for h in history[::-1]:
+        for h in self.arg1[::-1]:
             time_str = h.get("time")
             winners = h['winner']
             prize = f"{h.get('prize', 0):,}"
@@ -522,7 +523,8 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
             hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {stats['prize_name']}")
         embed.add_field(name="Recent drops (UTC)", value="\n".join(hist_lines), inline=False)
 
-    button = Button(label="get dmed every drop", style=discord.ButtonStyle.grey, emoji="⬇️", _callback="drop_history")
+    history = stats.get("history", []) # getting stats data for button
+    button = Button(label="get dmed every drop", style=discord.ButtonStyle.grey, emoji="⬇️", _callback="drop_history", arg1=history)
 
     view = discord.ui.View().add_item(button)
     await interaction.response.send_message(embed=embed, ephemeral=True, view=view)
