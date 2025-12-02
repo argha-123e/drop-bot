@@ -273,11 +273,20 @@ class Button(discord.ui.Button):
             winners = h['winner']
             prize = f"{h.get('prize', 0):,}"
             hist_lines.append(f"{time_str} — winner(s): {winners} — {prize} {self.arg2}")
-        while hist_lines:
-            await interaction.user.send("\n".join(hist_lines[:30]))
-            del hist_lines[:30]
+            dm_status = "Check your DMs!"
+        try:
+            while hist_lines:
+                await interaction.user.send("\n".join(hist_lines[:30]))
+                del hist_lines[:30]
+        except discord.Forbidden:
+            dm_status = "I couldn't DM you (DMs are closed)."
+        except Exception as e:
+            dm_status = f"Error sending DMs: {e}"
         self.disabled = True
-        await interaction.response.edit_message(content="dmed every drop", view=None)
+        await interaction.edit_original_response(
+        content=f"Sent history! {dm_status}", 
+        view=self.view
+    )
 
 
 # starter
@@ -346,6 +355,15 @@ async def on_msg_handler(self, message):
                 self.SERVER_IDs = db.get_server_ids()
                 self.TARGET_CHANNEL_ID = db.get_channel_ids()
                 SM.check_subscriptions()
+
+            elif cmd == "math":
+                ecuation = message.content[len(PREFIX) + 4:]
+                try:
+                    await message.reply(f"`{eval(ecuation)}`")
+                except Exception as e:
+                    await message.reply(f"wrong ecuation or other error\n{ecuation}")
+
+
                 
 spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
