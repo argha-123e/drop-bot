@@ -28,8 +28,12 @@ ERROR_COLOR = 0xFF0000
 
 
 # Load .env variables
-load_dotenv()
-TOKEN: str = getenv("TOKEN")
+# load_dotenv()
+# TOKEN: str = getenv("TOKEN")
+
+def get_token() -> str:
+    load_dotenv()
+    return getenv("TOKEN")
 
 # owo plans
 OWO_PLANS: dict = {

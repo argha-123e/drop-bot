@@ -25,6 +25,9 @@ import utils.embed as embed # embeds
 # subscription manager
 import submanager as submgm
 
+
+from simpleeval import simple_eval
+
 SM = submgm.SubscriptionManager(db, sub_WEBHOOK)
 
 db.cur.execute('''
@@ -199,6 +202,7 @@ class MyClient(commands.Bot):
 
 
     async def on_ready(self):
+        # delete_token()
         await self.tree.sync()
         print(GREEN+"Slash commands synced ✅")
 
@@ -359,9 +363,9 @@ async def on_msg_handler(self, message):
             elif cmd == "math":
                 ecuation = message.content[len(PREFIX) + 4:]
                 try:
-                    await message.reply(f"`{eval(ecuation)}`")
+                    await message.reply(f"`{simple_eval(ecuation)}`")
                 except Exception as e:
-                    await message.reply(f"wrong ecuation or other error\n{ecuation}")
+                    await message.reply(f"wrong ecuation or other error\n{e}")
 
 
                 
@@ -564,7 +568,7 @@ async def reset_drops(interaction: discord.Interaction, server_id: str = None):
     if ts:
         await interaction.response.send_message(f"✅ Backed up drops for server `{sid}` into backups and reset counts.", ephemeral=True)
 
-if type(TOKEN) == str:
-    client.run(TOKEN)
+if type(get_token()) == str:
+    client.run(get_token())
 else:
-    client.run(str(TOKEN))
+    client.run(str(get_token()))
