@@ -13,6 +13,9 @@ about = Embed(
             description=f"A fully automated chat-drop & giveaway system designed to boost activity, reward users, and grow your Discord server effortlessly.",
             color=MAIN_COLOR
         )
+
+about.set_thumbnail(url="https://cdn.discordapp.com/avatars/1438150894071058533/568c0cc9f3df4fdd5eca299de6cc5914.webp?size=1024")
+
 about.add_field(name="⭐ Automatic Drops", value="Drops appear automatically after a certain number of messages.\nPerfect for keeping chats active without staff involvement.", inline=inline)
 about.add_field(name="⭐ Custom Rewards", value="""
 Give anything you want as a prize:
@@ -46,12 +49,11 @@ help.add_field(
     name="🕹 Slash Commands",
     value=(
         "`/drop <minutes> <prize> <winners>` — Start a giveaway in this channel.\n"
-        "`/stats [server_id]` — Show server drops & subscription stats (owner or dev).\n"
-        f"`{PREFIX}about` — get info about Drop Bot.\n"
+        "`/stats [server_id]` — Show server chat drops & subscription stats (owner or dev).\n"
     ),
     inline=inline
 )
-
+help.set_thumbnail(url="https://cdn.discordapp.com/avatars/1438150894071058533/568c0cc9f3df4fdd5eca299de6cc5914.webp?size=1024")
 # Notes & limits
 help.add_field(
     name="ⓘ Notes & Limits",
@@ -69,7 +71,8 @@ help.add_field(
     value=(
         f"`/drop 5 50000 1`  → 5-minute drop, 1 winner, 50,000 prize\n"
         f"`/stats`  → get chat-drop stats\n"
-        f"`/about`  → get about Drop Bot\n"
+        f"`.about`  → get about Drop Bot\n"
+        f"`.plans`  → get Drop Bot active plans\n"
     ),
     inline=inline
 )
@@ -85,3 +88,41 @@ help.add_field(
 )
 
 help.set_footer(text=footer_txt)
+
+"""
+Drop Bot
+SUBSCRIPTION PLANS
+1-100 members
+500,000 OWO/month
+101-250 members
+1,000,000 OWO/month
+251-500 members
+2,500,000 OWO/month
+501-1000 members
+3,500,000 OWO/month
+1001-5000 members
+5,000,000 OWO/month
+5001-10000 members
+7,000,000 OWO/month
+"""
+
+
+# plan embed 
+#################################################################################################################
+plan = Embed(
+    title="SUBSCRIPTION PLANS",
+    description=(
+        ""
+    ),
+    color=MAIN_COLOR
+)
+plan.set_author(name="Drop Bot")
+plan.set_thumbnail(url="https://cdn.discordapp.com/avatars/1438150894071058533/568c0cc9f3df4fdd5eca299de6cc5914.webp?size=1024")
+
+plan.add_field(name="1-100 members",value=(f"{OWO_PLANS[100]} OWO/month"),inline=inline)
+plan.add_field(name="101-250 members",value=(f"{OWO_PLANS[250]} OWO/month"),inline=inline)
+plan.add_field(name="251-500 members",value=(f"{OWO_PLANS[500]} OWO/month"),inline=inline)
+plan.add_field(name="501-1000 members",value=(f"{OWO_PLANS[1000]} OWO/month"),inline=inline)
+plan.add_field(name="1001-5000 members",value=(f"{OWO_PLANS[5000]} OWO/month"),inline=inline)
+plan.add_field(name="5001-10000 members",value=(f"{OWO_PLANS[10000]} OWO/month"),inline=inline)
+plan.set_footer(text=footer_txt)

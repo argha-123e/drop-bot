@@ -337,6 +337,9 @@ async def on_msg_handler(self, message):
 
             elif cmd == "help":
                 await message.channel.send(embed=embed.help)
+            
+            elif cmd == "plans":
+                await message.channel.send(embed=embed.plan)
 
             elif cmd == "add_sub":
                 if len(args) > 3:
@@ -366,6 +369,7 @@ async def on_msg_handler(self, message):
                     await message.reply(f"`{simple_eval(ecuation)}`")
                 except Exception as e:
                     await message.reply(f"wrong ecuation or other error\n{e}")
+            
 
 
                 
