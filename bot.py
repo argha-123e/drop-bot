@@ -14,7 +14,7 @@ DB.start_sqlite_web()
 atexit.register(DB.stop_sqlite_web)
 
 # giveaway command
-from giveaway_cmd import start_giveaway
+from giveaway_cmd import start_giveaway, reroll
 
 
 # from /utils
@@ -184,13 +184,6 @@ def setup_msg_count(self):
         for server in data:
             if server["server_id"] == server_id:
                 self.msg_count[sid] = server["msg_count"]
-
-
-# Emoji's (bots own emojis to use)
-CONFETTI_EMOJI = discord.PartialEmoji(
-    name='confetti', id=1438155456823431343, 
-    animated=True 
-    ) # link https://cdn.discordapp.com/emojis/1437356632723165244.webp?size=96&animated=true
 
 
 # BOT CLASS
@@ -391,6 +384,7 @@ async def on_msg_handler(self, message: discord.Message):
                 if message.author.id not in owner_ids:
                     return
                 try:
+                    print(args[0])
                     sid = args[0] or str(message.guild.id)
                 except:
                     sid = str(message.guild.id)
@@ -402,100 +396,7 @@ async def on_msg_handler(self, message: discord.Message):
                     await message.reply(f"✅ Backed up drops for server `{message.guild.name}` into backups and reset counts.", ephemeral=True)
                         
 
-async def reroll(self, message: discord.Message, msg_id):
-    pass
-#     import random
-#     # getting channel id
-#     data = db.get_as_dict(table="servers", server_id=message.guild.id)[0]
-#     channel_id = int(data["channel"])
-#     channel = self.get_channel(channel_id)
 
-#     # getting the gwy message
-#     msg = channel.fetch_message(msg_id)
-#     reaction = discord.utils.get(msg.reactions, emoji=CONFETTI_EMOJI)
-
-#     if not reaction:
-#         try:
-#             await msg.reply("❌ No reactions. Giveaway canceled.")
-#             result_embed_edit = discord.Embed(
-#                 title="Giveaway Ended! <a:confetti:1438155456823431343>",
-#                 description=f"❌ No reactions. Giveaway canceled.",
-#                 color=ERROR_COLOR
-#                 )
-#             result_embed_edit.set_footer(text=footer_txt)
-#             await msg.edit(embed=result_embed_edit)
-#         except:
-#             self.gwy_running -= 1
-#         return False
-#     users = [user async for user in reaction.users() if not user.bot]
-#     users = [u for u in users if not u.bot]  # Remove bots
-
-#     if not users:
-#         self.gwy_running -= 1
-    #     try:
-    #         await msg.reply("❌ No valid users entered.")
-    #         result_embed_edit = discord.Embed(
-    #         title="Giveaway Ended! <a:confetti:1438155456823431343>",
-    #         description=f"❌ No valid users entered.",
-    #         color=ERROR_COLOR)
-    #         result_embed_edit.set_footer(text=footer_txt)
-    #         await msg.edit(embed=result_embed_edit)
-    #     except:
-    #         pass
-    #     return False
-
-    # winners_list = random.sample(users, min(1, len(users)))
-
-    # winner_mention = f""
-    # for winner in winners_list:
-    #     winner_mention = winner_mention + f"{winner.mention} "
-
-    
-
-    # # suppose winners_list is a list of Member objects or IDs
-    # winner_ids = [w.id if hasattr(w, "id") else int(w) for w in winners_list]
-
-    # if is_chat_drop:
-    #     update_drop_data(self.db, giveaway_msg.guild.id, PRIZE, winner_ids)
-        
-    #     await pay_channel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
-
-
-    # result_embed = discord.Embed(
-    #     title="🎊 Winner!",
-    #     description=f"congratulations you have won **{prize}** <a:confetti:1438155456823431343>",
-    #     color=SUCCESS_COLOR
-    # )
-    # result_embed.set_footer(text=footer_txt)
-    
-    # if giveaway_msg:
-    #     try:
-    #     # ✅ Confirm the message still exists on Discord
-    #         find_msg = await giveaway_msg.channel.fetch_message(giveaway_msg.id)
-    #     except discord.NotFound:
-    #         find_msg = None
-    # if find_msg:   
-    #     await giveaway_msg.reply(
-    #         content=winner_mention,
-    #         embed=result_embed,
-    #         allowed_mentions=discord.AllowedMentions(users=True))
-    # else:
-    #     await channel.send(
-    #         content=winner_mention,
-    #         embed=result_embed,
-    #         allowed_mentions=discord.AllowedMentions(users=True)
-    #         )
-    # result_embed_edit = discord.Embed(
-    #     title="Giveaway Ended! <a:confetti:1438155456823431343>",
-    #     description=f"Participant(s): {len(users)}!\n{winner_mention} won **{prize}**",
-    #     color=SUCCESS_COLOR
-    # )
-    # result_embed_edit.set_footer(text=footer_txt)
-    # try:
-    #     await msg.edit(embed=result_embed_edit)
-    # except:
-    #     pass
-                
 spacer = "--------------------------------------------------------------------------------------------------------------"
 # subscription manager
 ################################################################################################################
