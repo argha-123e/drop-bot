@@ -43,6 +43,7 @@ help = Embed(
     ),
     color=MAIN_COLOR
 )
+help.set_thumbnail(url="https://cdn.discordapp.com/avatars/1438150894071058533/568c0cc9f3df4fdd5eca299de6cc5914.webp?size=1024")
 
 # Slash commands for users
 help.add_field(
@@ -50,10 +51,10 @@ help.add_field(
     value=(
         "`/drop <minutes> <prize> <winners>` — Start a giveaway in this channel.\n"
         "`/stats [server_id]` — Show server chat drops & subscription stats (owner or dev).\n"
+        "`/setup` — runs setup wizard to setup you're server.\n"
     ),
     inline=inline
 )
-help.set_thumbnail(url="https://cdn.discordapp.com/avatars/1438150894071058533/568c0cc9f3df4fdd5eca299de6cc5914.webp?size=1024")
 # Notes & limits
 help.add_field(
     name="ⓘ Notes & Limits",
@@ -70,6 +71,7 @@ help.add_field(
     name="🔧 Examples",
     value=(
         f"`/drop 5 50000 1`  → 5-minute drop, 1 winner, 50,000 prize\n"
+        "`/setup` — runs setup wizard to setup you're server.\n"
         f"`/stats`  → get chat-drop stats\n"
         f"`.about`  → get about Drop Bot\n"
         f"`.plans`  → get Drop Bot active plans\n"
@@ -88,24 +90,6 @@ help.add_field(
 )
 
 help.set_footer(text=footer_txt)
-
-"""
-Drop Bot
-SUBSCRIPTION PLANS
-1-100 members
-500,000 OWO/month
-101-250 members
-1,000,000 OWO/month
-251-500 members
-2,500,000 OWO/month
-501-1000 members
-3,500,000 OWO/month
-1001-5000 members
-5,000,000 OWO/month
-5001-10000 members
-7,000,000 OWO/month
-"""
-
 
 # plan embed 
 #################################################################################################################

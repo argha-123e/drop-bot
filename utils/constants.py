@@ -3,6 +3,14 @@ from os import getenv
 from colorama import Fore
 from sys import platform
 
+is_server:bool = False 
+'''Used to know if the shard is on local pc or on cloud'''
+
+if platform == "win32":
+    is_server = False
+else:
+    is_server = True
+
 # owners
 owner_ids = [
     1206904635420450856
@@ -33,7 +41,9 @@ ERROR_COLOR = 0xFF0000
 
 def get_token() -> str:
     load_dotenv()
-    return getenv("TOKEN")
+    if is_server:
+        return getenv("TOKEN")
+    return getenv("PVT_TOKEN")
 
 # owo plans
 OWO_PLANS: dict = {
@@ -76,9 +86,7 @@ RESET = Fore.RESET
 
 # platform
 footer_txt = "Drop Bot • made with 💖"
-is_server = False
-if platform == "win32":
+if not is_server:
     footer_txt = "Drop Bot • made with 💖 (pc)"
 else:
     footer_txt = "Drop Bot • made with 💖"
-    is_server = True

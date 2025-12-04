@@ -30,22 +30,27 @@ async def sql_handler(self, message):
             await message.channel.send(f"Error:\n```{e}```")
 
 # pretty json helper
-async def pretty_json(self, message, as_dict):
+async def pretty_json(self, as_dict, message = None):
     from json import dumps
     # Pretty JSON formatting
     pretty_json = dumps(as_dict, indent=4)
 
-    # If too long, fall back to compact format
-    if len(pretty_json) > MAX_DISCORD_LEN:
-        compact_json = dumps(as_dict)
-        if len(compact_json) > MAX_DISCORD_LEN:
-            await message.channel.send("Output too large to send.")
+    if message:
+        # If too long, fall back to compact format
+        if len(pretty_json) > MAX_DISCORD_LEN:
+            compact_json = dumps(as_dict)
+            if len(compact_json) > MAX_DISCORD_LEN:
+                await message.channel.send("Output too large to send.")
+            else:
+                await message.channel.send(f"```json\n{compact_json}\n```")
         else:
-            await message.channel.send(f"```json\n{compact_json}\n```")
+            await message.channel.send(f"```json\n{pretty_json}\n```")
     else:
-        await message.channel.send(f"```json\n{pretty_json}\n```")
+        return pretty_json
 
 def backup_data():
+    if not is_server:
+        return
     file_path = "data.db"
 
     with open(file_path, "rb") as f:

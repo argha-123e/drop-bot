@@ -75,19 +75,18 @@ class DB:
 PORT = 21952
 PASSWORD:str = os.getenv("SQLITE_WEB_PASSWORD")
 DB_PATH = "data.db"
-
 PROCESS = None
 domain = "127.0.0.1"
 
 # class db_panel:
 def start_sqlite_web():
-    global PROCESS
+    global PROCESS, domain
 
     if PROCESS and PROCESS.poll() is None:
         print(GREEN+"[DB PANEL] Already running"+RESET)
         return
     
-    if platform == "win32":
+    if not is_server:
         PROCESS = subprocess.Popen(
             [
                 "python",
@@ -114,7 +113,8 @@ def start_sqlite_web():
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             )
-    domain = "fi8.bot-hosting.net"
+    if is_server:
+        domain = "fi8.bot-hosting.net"
 
     print(BLUE+f"[DB PANEL] Running on http://{domain}:{PORT}"+RESET)
     # print(f"[DB PANEL] Password: {PASSWORD}")

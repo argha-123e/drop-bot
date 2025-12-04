@@ -25,6 +25,8 @@ import utils.embed as embed # embeds
 # subscription manager
 import submanager as submgm
 
+# setup wizard
+from setup_wizard import setup
 
 from simpleeval import simple_eval
 
@@ -78,7 +80,7 @@ db.cur.execute("""
         FOREIGN KEY (server_id) REFERENCES servers(server_id)
     );""")
 
-if not db.exists(table="servers", server_id=1437310569387655249):
+if not db.exists(table="servers", server_id=1437310569387655249) and is_server:
     db.insert(
         "servers", server_id =1437310569387655249, # insert a row in a table
         channel=1443974858445819955, pay_channel=1443974900929790072, msg_needed=5, 
@@ -167,9 +169,7 @@ async def msg_count_saver(self):
                             pk_value=server['server_id'], msg_count=self.msg_count[str(server_id)]
                             )
         if cycled % 60 == 0:
-            self.SERVER_IDs = db.get_server_ids()
-            self.TARGET_CHANNEL_ID = db.get_channel_ids()
-            SM.check_subscriptions()
+            self.checker()
         elif cycled % 5 == 0 and is_server:
             backup_data()
         await asyncio.sleep(60)
@@ -203,13 +203,15 @@ class MyClient(commands.Bot):
 
     async def on_ready(self):
         # delete_token()
+        await setup(self)
         await self.tree.sync()
         print(GREEN+"Slash commands synced ✅")
 
         print(f"✅  Logged in as {self.user}"+RESET)
         SM.check_subscriptions()
         await msg_count_saver(self)
-    async def on_message(self, message):
+
+    async def on_message(self, message: discord.Message):
         # block own/bot msgs
         if message.author.bot:
             return
@@ -254,6 +256,13 @@ class MyClient(commands.Bot):
             await start_giveaway(self, *args, **kwargs)
         except Exception as e:
             print(e)
+    
+    def checker(self):
+        """rechecks everyting to avoid errors"""
+        self.SERVER_IDs = db.get_server_ids()
+        self.TARGET_CHANNEL_ID = db.get_channel_ids()
+        SM.check_subscriptions()
+        setup_msg_count(self)
 
 
 # button class
@@ -314,7 +323,7 @@ client = start()
 
 # on_message cmds handler
 ########################################################################################################################
-async def on_msg_handler(self, message):
+async def on_msg_handler(self, message: discord.Message):
     if  message.content.startswith(PREFIX):
             # Split the message into command + args
             parts = message.content[len(PREFIX):].split()
@@ -327,20 +336,15 @@ async def on_msg_handler(self, message):
             # Example command: ,test hello world
             if cmd == "ping":
                 await message.reply(f"Pong! `{round(self.latency * 1000)}ms`")
-            
             elif cmd == "count":
                 if message.guild.id in self.SERVER_IDs:
                     await message.reply(f"`{self.msg_count[str(message.guild.id)]}`")
-
             elif cmd == "about":
                 await message.channel.send(embed=embed.about)
-
             elif cmd == "help":
                 await message.channel.send(embed=embed.help)
-            
             elif cmd == "plans":
                 await message.channel.send(embed=embed.plan)
-
             elif cmd == "add_sub":
                 if len(args) > 3:
                     arg3 = args[3]
@@ -359,9 +363,7 @@ async def on_msg_handler(self, message):
 
             elif cmd == "sql":
                 await sql_handler(self, message)
-                self.SERVER_IDs = db.get_server_ids()
-                self.TARGET_CHANNEL_ID = db.get_channel_ids()
-                SM.check_subscriptions()
+                self.checker()
 
             elif cmd == "math":
                 ecuation = message.content[len(PREFIX) + 4:]
@@ -370,6 +372,20 @@ async def on_msg_handler(self, message):
                 except Exception as e:
                     await message.reply(f"wrong ecuation or other error\n{e}")
             
+            elif cmd == "reset_drops":
+                if message.author.id not in owner_ids:
+                    return
+                try:
+                    sid = args[0] or str(message.guild.id)
+                except:
+                    sid = str(message.guild.id)
+                if int(message.guild.id) not in db.get_server_ids():
+                    await message.reply("❌ Server not found.", ephemeral=True)
+                    return
+                ts = backup_and_reset_server(sid)
+                if ts:
+                    await message.reply(f"✅ Backed up drops for server `{message.guild.name}` into backups and reset counts.", ephemeral=True)
+                        
 
 
                 
@@ -493,8 +509,9 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
 
 
 # /stats command
-@client.tree.command(name="stats", description="Show chat drops stats for current server (owner only). Dev can query any server.")
-@app_commands.describe(server_id="Optional server id")
+@client.tree.command(name="stats", description="Show chat drops stats for current server (owner only)")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(server_id="Optional server id", )
 async def stats(interaction: discord.Interaction, server_id: str = None):
 
     if server_id:
@@ -555,22 +572,6 @@ async def stats(interaction: discord.Interaction, server_id: str = None):
     view = discord.ui.View().add_item(button)
     await interaction.response.send_message(embed=embed, ephemeral=True, view=view)
 
-
-# /reset command (dev only)
-@client.tree.command(name="reset_drops", description="(Dev only) Backup and reset drops data for a server")
-@app_commands.describe(server_id="Server ID to reset (defaults to current server)")
-async def reset_drops(interaction: discord.Interaction, server_id: str = None):
-    if interaction.user.id not in owner_ids:
-        await interaction.response.send_message("❌ Only the bot developer can run this.", ephemeral=True)
-        return
-    sid = server_id or str(interaction.guild_id)
-    if int(sid) not in db.get_server_ids():
-        await interaction.response.send_message("❌ Server not found.", ephemeral=True)
-        return
-
-    ts = backup_and_reset_server(sid)
-    if ts:
-        await interaction.response.send_message(f"✅ Backed up drops for server `{sid}` into backups and reset counts.", ephemeral=True)
 
 if type(get_token()) == str:
     client.run(get_token())
