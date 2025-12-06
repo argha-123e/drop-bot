@@ -154,7 +154,7 @@ def get_server_stats(sid: int):
             "prize_name": servers_data["prize_name"]
         }
 
-async def msg_count_saver(self):
+async def main_loop(self):
     cycled:int = 0
     backup_data()
     while True:
@@ -173,7 +173,12 @@ async def msg_count_saver(self):
             self.checker()
         elif cycled % 5 == 0 and is_server:
             backup_data()
-        await asyncio.sleep(60)
+        await asyncio.sleep(20)
+        print(f"current gwy running: {self.gwy_running}")
+        await asyncio.sleep(20)
+        print(f"current gwy running: {self.gwy_running}")
+        await asyncio.sleep(20)
+        print(f"current gwy running: {self.gwy_running}")
         cycled += 1
 
 
@@ -211,11 +216,14 @@ class MyClient(commands.Bot):
 
         print(f"✅  Logged in as {self.user}"+RESET)
         SM.check_subscriptions()
-        await msg_count_saver(self)
+        await main_loop(self)
 
     async def on_message(self, message: discord.Message):
         # updating gwy_running every msg
         self.gwy_running = len(self._gwy_tasks)
+
+        #printing current gwy running
+        print(f"current gwy running: {self.gwy_running}")
 
         # block own/bot msgs
         if message.author.bot:
@@ -259,6 +267,7 @@ class MyClient(commands.Bot):
     async def start_giveaway_helper(self, *args, **kwargs):
         try:
             await start_giveaway(self, *args, **kwargs)
+            print(f"current gwy running: {self.gwy_running}")
         except Exception as e:
             print(e)
     
@@ -385,7 +394,7 @@ async def on_msg_handler(self, message: discord.Message):
                     except:
                         await reroll(self, message, message.reference.message_id)
                 except:
-                    await message.reply("Wrong format, `.reroll <message.id>` or `.reroll` while replying to the gwy msg")
+                    await message.reply("Wrong format, `.reroll <message.id>` or `.reroll` while replying to a gwy msg")
 
             elif cmd == "reset_drops":
                 if message.author.id not in owner_ids:
@@ -520,7 +529,7 @@ async def drop(interaction: discord.Interaction, minutes: float, prize: str, win
         f"A drop of {minutes} min for {winners} winner(s) will be started with {prize} each",
         ephemeral=True
         )
-    await client.start_giveaway(interaction.channel, winners, minutes, prize, False, None, None)
+    await client.start_giveaway_helper(interaction.channel, winners, minutes, prize, False, None, None)
 
 
 # /stats command
