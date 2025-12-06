@@ -58,7 +58,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
         end_time = int(time.time()) + (int(giveaway_duration * 60))
         embed = discord.Embed(
             title="Giveaway Started! <a:confetti:1438155456823431343>",
-            description=f"Prize **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
+            description=f"Prize: **{prize}**\nWinners: {winners}\nEnds: <t:{end_time}:R>\n\nReact with <a:confetti:1438155456823431343> to join!",
             color=MAIN_COLOR
         )
         embed.set_footer(text=footer_txt)
@@ -254,7 +254,7 @@ async def reroll(self, message: discord.Message, msg_id):
     if is_chat_drop:
         update_drop_data(self.db, msg.guild.id, PRIZE, winner_ids, msg.id, "entry")
         
-        await pay_channel.send(f"`rerolled` {msg.jump_url}\n{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
+        await pay_channel.send(f"`rerolled` giveaway msg link: {msg.jump_url}\n{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
     else:
         update_drop_data(self.db, msg.guild.id, PRIZE, 1, msg.id, "/drop")
 
