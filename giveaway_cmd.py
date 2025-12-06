@@ -121,7 +121,7 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
         if is_chat_drop:
             update_drop_data(self.db, giveaway_msg.guild.id, PRIZE, winner_ids, msg.id, "entry")
             
-            await pay_channel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
+            await pay_channel.send(f"giveaway msg link: {msg.jump_url}\n{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
         else:
             update_drop_data(self.db, giveaway_msg.guild.id, PRIZE, winners, msg.id, "/drop")
 
@@ -176,7 +176,8 @@ async def start_giveaway(self, channel, winners, giveaway_duration, PRIZE, is_ch
 
 
 async def reroll(self, message: discord.Message, msg_id):
-    import random
+    if not message.author.guild_permissions.administrator:
+        return await message.reply("You can't use this cmd, this is admin only.")
     db = self.db
 
     # getting data's
@@ -253,7 +254,7 @@ async def reroll(self, message: discord.Message, msg_id):
     if is_chat_drop:
         update_drop_data(self.db, msg.guild.id, PRIZE, winner_ids, msg.id, "entry")
         
-        await pay_channel.send(f"{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
+        await pay_channel.send(f"`rerolled` {msg.jump_url}\n{winner_mention}won **{prize}**", allowed_mentions=discord.AllowedMentions(users=False))
     else:
         update_drop_data(self.db, msg.guild.id, PRIZE, 1, msg.id, "/drop")
 

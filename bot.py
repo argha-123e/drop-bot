@@ -214,6 +214,9 @@ class MyClient(commands.Bot):
         await msg_count_saver(self)
 
     async def on_message(self, message: discord.Message):
+        # updating gwy_running every msg
+        self.gwy_running = len(self._gwy_tasks)
+
         # block own/bot msgs
         if message.author.bot:
             return
@@ -338,9 +341,10 @@ async def on_msg_handler(self, message: discord.Message):
             # Example command: ,test hello world
             if cmd == "ping":
                 await message.reply(f"Pong! `{round(self.latency * 1000)}ms`")
-            elif cmd == "count":
-                if message.guild.id in self.SERVER_IDs:
-                    await message.reply(f"`{self.msg_count[str(message.guild.id)]}`")
+            elif cmd == "count":  #  {self.msg_count[sid]}/{msg_needed}
+                if message.guild.id in self.SERVER_IDs: 
+                    msg_needed = db.cur.execute(f"select msg_needed from servers where server_id={message.guild.id}").fetchall()[0][0]
+                    await message.reply(f"`Count: {self.msg_count[str(message.guild.id)]}/{msg_needed}`")
             elif cmd == "about":
                 await message.channel.send(embed=embed.about)
             elif cmd == "help":
@@ -376,9 +380,12 @@ async def on_msg_handler(self, message: discord.Message):
 
             elif cmd == "reroll" or cmd == "rr":
                 try:
-                    await reroll(self, message, int(args[0]))
+                    try:
+                        await reroll(self, message, int(args[0]))
+                    except:
+                        await reroll(self, message, message.reference.message_id)
                 except:
-                    await message.reply("Wrong format, `.reroll <message.id>`")
+                    await message.reply("Wrong format, `.reroll <message.id>` or `.reroll` while replying to the gwy msg")
 
             elif cmd == "reset_drops":
                 if message.author.id not in owner_ids:
@@ -497,11 +504,11 @@ async def help_cmd(interaction: discord.Interaction):
 @client.tree.command(name="drop", description="send a quick drop to currrent channel.")
 async def drop(interaction: discord.Interaction, minutes: float, prize: str, winners: int):
 
-    if client.gwy_running > gwy_limit and interaction.user.id not in allowed_users: # hard limit 100 gwys
+    if client.gwy_running > gwy_limit and interaction.user.id in allowed_users: # hard limit 100 gwys
         await interaction.response.send_message("shard is too busy, try again later",ephemeral=True)
         return
     
-    if minutes > gwy_time_limit and interaction.user.id not in allowed_users: # hard cap of 60 minutes
+    if minutes > gwy_time_limit and interaction.user.id in allowed_users: # hard cap of 60 minutes
         await interaction.response.send_message("try drops under 1hrs (60 minutes)",ephemeral=True)
         return
     
