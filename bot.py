@@ -222,9 +222,6 @@ class MyClient(commands.Bot):
         # updating gwy_running every msg
         self.gwy_running = len(self._gwy_tasks)
 
-        #printing current gwy running
-        print(f"current gwy running: {self.gwy_running}")
-
         # block own/bot msgs
         if message.author.bot:
             return
@@ -252,6 +249,9 @@ class MyClient(commands.Bot):
 
             if self.msg_count[sid] >= msg_needed:
                 self.msg_count[sid] = 0    
+
+                #printing current gwy running
+                print(f"current gwy running: {self.gwy_running+1}")
 
 
                 task = asyncio.create_task(
